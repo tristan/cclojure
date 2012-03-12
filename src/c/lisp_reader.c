@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <ctype.h>
-#include <sys/types.h>
-#include <oniguruma.h>
-#include <gmp.h>
+//#include <sys/types.h>
+//#include <gmp.h>
+#include "regex.h"
 #include "string_buffer.h"
 
 int initialized = 0;
@@ -11,8 +11,6 @@ static regex_t *float_regex;
 static regex_t *ratio_regex;
 
 static void init_patterns() {
-  int r = 0;
-  OnigErrorInfo einfo;
 
   int number_of_patterns = 3;
   regex_t *regexs[] = {
@@ -21,26 +19,16 @@ static void init_patterns() {
     ratio_regex
   };
 
-  unsigned char *patterns[] = {
-    (unsigned char*)"([-+]?)(?:(0)|([1-9][0-9]*)|0[xX]([0-9A-Fa-f]+)|0([0-7]+)|([1-9][0-9]?)[rR]([0-9A-Za-z]+)|0[0-9]+)",
-    (unsigned char*)"([-+]?[0-9]+(\\.[0-9]*)?([eE][-+]?[0-9]+)?)(M)?",
-    (unsigned char*)"([-+]?[0-9]+)/([0-9]+)"
+  char *patterns[] = {
+    "([-+]?)(?:(0)|([1-9][0-9]*)|0[xX]([0-9A-Fa-f]+)|0([0-7]+)|([1-9][0-9]?)[rR]([0-9A-Za-z]+)|0[0-9]+)",
+    "([-+]?[0-9]+(\\.[0-9]*)?([eE][-+]?[0-9]+)?)(M)?",
+    "([-+]?[0-9]+)/([0-9]+)"
   };
 
-
   for (int i = 0; i < number_of_patterns; i++) {
-    unsigned char *pattern = patterns[i];
+    char *pattern = patterns[i];
     regex_t *reg = regexs[i];
-    r = 
-      onig_new(&reg, pattern, pattern + strlen((char* )pattern), 
-               ONIG_OPTION_DEFAULT | ONIG_OPTION_EXTEND | ONIG_OPTION_FIND_LONGEST, 
-               ONIG_ENCODING_ASCII, ONIG_SYNTAX_JAVA, &einfo);
-    if (r != ONIG_NORMAL) {
-      char s[ONIG_MAX_ERROR_MESSAGE_LEN];
-      onig_error_code_to_str(s, r, &einfo);
-      fprintf(stderr, "ERROR: %s\n", s);
-      exit(1);
-    }
+    reg = re_compile(pattern);
   }
 
   initialized = 1;
