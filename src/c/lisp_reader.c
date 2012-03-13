@@ -1,49 +1,32 @@
 #include <stdio.h>
 #include <ctype.h>
-//#include <sys/types.h>
-//#include <gmp.h>
+#include "numbers.h"
 #include "regex.h"
 #include "string_buffer.h"
 
-int initialized = 0;
-static regex_t *int_regex;
-static regex_t *float_regex;
-static regex_t *ratio_regex;
+static regex_t *int_regex = NULL;
+static regex_t *float_regex = NULL;
+static regex_t *ratio_regex = NULL;
 
-static void init_patterns() {
-
-  int number_of_patterns = 3;
-  regex_t *regexs[] = {
-    int_regex,
-    float_regex,
-    ratio_regex
-  };
-
-  char *patterns[] = {
-    "([-+]?)(?:(0)|([1-9][0-9]*)|0[xX]([0-9A-Fa-f]+)|0([0-7]+)|([1-9][0-9]?)[rR]([0-9A-Za-z]+)|0[0-9]+)",
-    "([-+]?[0-9]+(\\.[0-9]*)?([eE][-+]?[0-9]+)?)(M)?",
-    "([-+]?[0-9]+)/([0-9]+)"
-  };
-
-  for (int i = 0; i < number_of_patterns; i++) {
-    char *pattern = patterns[i];
-    regex_t *reg = regexs[i];
-    reg = re_compile(pattern);
+static void init() {
+  if (int_regex == NULL) {
+    int_regex = re_compile("([-+]?)(?:(0)|([1-9][0-9]*)|0[xX]([0-9A-Fa-f]+)|0([0-7]+)|([1-9][0-9]?)[rR]([0-9A-Za-z]+)|0[0-9]+)");
   }
 
-  initialized = 1;
-  return;
+  if (float_regex == NULL) {
+    float_regex = re_compile("([-+]?[0-9]+(\\.[0-9]*)?([eE][-+]?[0-9]+)?)(M)?");
+  }
+
+  if (ratio_regex == NULL) {
+    ratio_regex = re_compile("([-+]?[0-9]+)/([0-9]+)");
+  }
 }
 
-/*
-static char *regex_group(regmatch_t *match, const char* s) {
-  int len = match->rm_eo - match->rm_so;
-  char *tmp = malloc(len + 1);
-  strncpy(tmp, s+match->rm_so, len);
-  tmp[len] = '\0';
-  return tmp;
+static void destroy() {
+  regex_destroy(int_regex);
+  regex_destroy(float_regex);
+  regex_destroy(ratio_regex);
 }
-*/
 
 static int iswhitespace(int ch) {
   if (isblank(ch) || ch == ',') {
@@ -58,83 +41,75 @@ static int ismacro(int ch) {
   return 0;
 }
 
-/*
 static void *match_number(const char* s) {
-  regmatch_t matches[8];
-  if (regexec(&int_pattern, s, 8, matches, 0) != REG_NOMATCH) {
-    long long int *i = malloc(sizeof(long long int));
-    if (matches[2].rm_so == -1) {
-      *i = 0;
-      return i;
+
+  regmatch_t *match = re_match(int_regex, s);
+  if (match) {
+    char *n = NULL;
+    n = re_group(match, 2);
+    if (n != NULL) {
+      return Integer_init_int(0);
+      free(n);
+      return NULL;
     }
     int negate = 1;
-    if (matches[1].rm_so != -1) {
-      if (s[matches[1].rm_so] == '-') {
+    n = re_group(match, 1);
+    if (n != NULL) {
+      if (n[0] == '-')
         negate = -1;
-      }
+      free(n);
     }
-    char *n = NULL;
     int radix = 10;
-    if (matches[3].rm_so != -1) {
-      n = regex_group(&matches[3], s);
+    if ((n = re_group(match, 3)) != NULL) {
       radix = 10;
-    } else if (matches[4].rm_so != -1) {
-      n = regex_group(&matches[4], s);
+    } else if ((n = re_group(match, 4)) != NULL) {
       radix = 16;
-    } else if (matches[5].rm_so != -1) {
-      n = regex_group(&matches[5], s);
+    } else if ((n = re_group(match, 5)) != NULL) {
       radix = 8;
-    } else if (matches[7].rm_so != -1) {
-      n = regex_group(&matches[7], s);
-      char *tmp = regex_group(&matches[6], s);
+    } else if ((n = re_group(match, 7)) != NULL) {
+      char *tmp = re_group(match, 6);
       radix = atoi(tmp);
       free(tmp);
     }
     if (n == NULL) {
       return NULL;
     } else {
-      *i = strtoll(n, NULL, radix) * negate;
+      number *num = Integer_init_str(n);
       free(n);
-      return i;
+      return num;
     }
   }
+  regmatch_destroy(match);
 
-  if (regexec(&float_pattern, s, 5, matches, 0) != REG_NOMATCH) {
-    long double *d = malloc(sizeof(long double));
+  match = re_match(float_regex, s);
+  if (match) {
     char *n = NULL;
-    if (matches[4].rm_so != -1) {
-      n = regex_group(&matches[1], s);
-      *d = strtold(n, NULL);
+    if ((n = re_group(match, 4)) != NULL) {
+      return Float_init_str(n);
       free(n);
     } else {
-      *d = strtold(s, NULL);
+      return Float_init_str(s);
     }
-    return d;
   }
+  regmatch_destroy(match);
 
-  if (regexec(&ratio_pattern, s, 3, matches, 0) != REG_NOMATCH) {
+  match = re_match(ratio_regex, s);
+  if (match) {
     int inum, iden;
     char *snum, *sden;
-    snum = regex_group(&matches[1], s);
-    sden = regex_group(&matches[2], s);
-    inum = atoi(snum);
-    iden = atoi(sden);
+    snum = re_group(match, 1);
+    sden = re_group(match, 2);
+    number *rat = Ratio_init_str(snum, sden);
+    
     free(snum);
     free(sden);
 
-    if (inum % iden == 0) {
-      int *i = malloc(sizeof(int));
-      *i = inum / iden;
-      return i;
-    } else {
-      double *d = malloc(sizeof(double));
-      *d = inum / iden;
-      return d;
-    }
+    return rat;
   }
   return NULL;
 }
-*/
+
+
 static void *read_number(FILE* in, unsigned char ch) {
 
   StringBuffer *sb = StringBuffer_new();
@@ -151,7 +126,7 @@ static void *read_number(FILE* in, unsigned char ch) {
   }
 
   char *str = StringBuffer_to_string(sb);
-  void *n = NULL;//match_number(str);
+  number *n = match_number(str);
 
   if (n == NULL) {
     printf("Invalid Number: %s", str);
@@ -166,9 +141,7 @@ void *parse_lisp(FILE *in) {
   int i;
   unsigned char ch;
 
-  if (!initialized) {
-    init_patterns();
-  }
+  init();
 
   for (;;) {
     while (iswhitespace(i = fgetc(in))) ;
