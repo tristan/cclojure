@@ -7,8 +7,7 @@
 #define _r(N) (URegularExpression*)N->regex_data
 #define _m(N) (URegularExpression*)N->match_data
 
-#define TEMP_LENGTH 1024
-
+/*
 // builds a UChar* from a char*
 static UChar *build_UChar(const char *str) {
   int len = strlen(str) + 1;
@@ -30,13 +29,13 @@ static char *build_char(const UChar *str) {
   }
   return rval;
 }
+*/
 
-regex_t *re_compile(const char *re_str) {
+regex_t *re_compile(const UChar *re_str) {
   UErrorCode status = 0;
   UParseError pe;
 
-  UChar *ure_str = build_UChar(re_str);
-  URegularExpression *ure = uregex_open(ure_str,
+  URegularExpression *re = uregex_open(re_str,
 					-1,
 					0,
 					&pe,
@@ -48,7 +47,7 @@ regex_t *re_compile(const char *re_str) {
   }
 
   regex_t *rval = malloc(sizeof(regex_t));
-  rval->regex_data = (void*)ure;
+  rval->regex_data = (void*)re;
   return rval;
 }
 
@@ -59,15 +58,14 @@ void regex_destroy(regex_t *reg) {
   free(reg);
 }
 
-regmatch_t *re_match(regex_t *reg, const char* str) {
+regmatch_t *re_match(regex_t *reg, const UChar* str) {
   if (str == NULL) {
     return NULL;
   }
 
   UErrorCode status = 0;
 
-  UChar *ustr = build_UChar(str);
-  uregex_setText(_r(reg), ustr, -1, &status);
+  uregex_setText(_r(reg), str, -1, &status);
 
   if (status != 0) {
     printf("ERROR setting string, error no: %d\n", status);
@@ -97,19 +95,22 @@ int re_group_count(regmatch_t *match) {
   return 0;
 }
 
-char *re_group(regmatch_t *match, int group) {
+UChar *re_group(regmatch_t *match, int group) {
   // assuming the caller won't have any match data unless re_match was successful
-  char *res = NULL;
   if (match) {
-    UChar temp[TEMP_LENGTH];
+    UChar *resp;
     UErrorCode status;
     int s = uregex_start(_m(match), group, &status);
+    int e = uregex_end(_m(match), group, &status);
     if (s >= 0) {
-      int len = uregex_group(_m(match), group, temp, TEMP_LENGTH, &status);
+      int len = (e - s) + 1;
+      resp = malloc(sizeof(UChar) * len);
+      len = uregex_group(_m(match), group, resp, len, &status);
       if (len >= 0) {
-        res = build_char(temp);
+        return resp;
       }
+      puts("unexpectedly failed to get group");
     }
   }
-  return res;
+  return NULL;
 }

@@ -50,6 +50,7 @@ int numbers_test(int argc, char *argv[]) {
   }
 
   Number *i = Integer_init_str(argv[1], 10);
+  Integer_negate(i);
   Number *f = Float_init_str(argv[2]);
   Number *r = Ratio_init_str(argv[3], argv[4]);
 

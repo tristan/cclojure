@@ -9,7 +9,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  FILE *f = fopen(argv[1], "r");
+  UFILE *f = u_fopen(argv[1], "r", NULL, NULL);
   parse_lisp(f);
 
   return 0;

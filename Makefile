@@ -1,12 +1,12 @@
-CFLAGS=-Wall -g -std=c99 -licuuc -licudata -licui18n -lgmp
+CFLAGS=-Wall -g -std=c99 -licuuc -licudata -licui18n -licuio -lgmp
 
-src/c/main: src/c/numbers_gmp.o src/c/regex_icu.o src/c/string_buffer.o src/c/lisp_reader.o
+src/c/main: src/c/unicode_utils.o src/c/numbers_gmp.o src/c/regex_icu.o src/c/string_buffer.o src/c/lisp_reader.o
 
 cclj: src/c/main
 	mkdir -p bin
 	mv src/c/main bin/cclj
 
-src/c/testing: src/c/numbers_gmp.o src/c/regex_icu.o
+src/c/testing: src/c/unicode_utils.o src/c/numbers_gmp.o src/c/regex_icu.o
 
 testing: src/c/testing
 	mkdir -p bin

@@ -1,6 +1,8 @@
 #ifndef _lisp_reader_h
 #define _lisp_reader_h
 
-void *parse_lisp(FILE *fd);
+#include <unicode/ustdio.h>
+
+void *parse_lisp(UFILE *fd);
 
 #endif

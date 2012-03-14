@@ -35,13 +35,18 @@ Number *Integer_init_int(int i) {
 //  return Integer_init_str(str, 10);
 //}
 
-Number *Integer_init_str(const char *str, int base) {
+Number *Integer_init_str(const UChar *str, int base) {
+  char *astr = malloc(u_strlen(str)+1);
+  u_austrcpy(astr, str);
+
   mpz_t *it = malloc(sizeof(mpz_t));
   mpz_init(*it);
-  if (mpz_set_str(*it, str, base) != 0) {
+  if (mpz_set_str(*it, astr, base) != 0) {
+    free(astr);
     return NULL;
   }
 
+  free(astr);
   return build_Number(it, INTEGER);
 }
 
@@ -53,23 +58,31 @@ Number *Float_init_f(float f) {
   return build_Number(ft, FLOAT);
 }
 
-Number *Float_init_str(const char *str) {
+Number *Float_init_str(const UChar *str) {
+  char *astr = malloc(u_strlen(str)+1);
+  u_austrcpy(astr, str);
+
   mpf_t *ft = malloc(sizeof(mpf_t));
   mpf_init(*ft);
-  if (mpf_set_str(*ft, str, 10) != 0) {
+  if (mpf_set_str(*ft, astr, 10) != 0) {
     return NULL;
   }
 
+  free(astr);
   return build_Number(ft, FLOAT);
 }
 
-Number *Ratio_init_str(const char *dividend, const char *divisor) {
+Number *Ratio_init_str(const UChar *dividend, const UChar *divisor) {
+  char *adivid = malloc(u_strlen(dividend)+1);
+  char *adivis = malloc(u_strlen(divisor)+1);
+  u_austrcpy(adivid, dividend);
+  u_austrcpy(adivis, divisor);
 
   mpq_t num;
   mpq_t den;
   mpq_inits(num, den, NULL);
-  if (mpq_set_str(num, dividend, 10) != 0) return NULL;
-  if (mpq_set_str(den, divisor, 10) != 0) return NULL;
+  if (mpq_set_str(num, adivid, 10) != 0) return NULL;
+  if (mpq_set_str(den, adivis, 10) != 0) return NULL;
 
   mpq_t *quad = malloc(sizeof(mpq_t));
   mpq_init(*quad);
@@ -77,6 +90,12 @@ Number *Ratio_init_str(const char *dividend, const char *divisor) {
 
   mpq_clear(num);
   mpq_clear(den);
+
+  free(adivid);
+  free(adivis);
+
+  // TODO: it may be worth checking if this is a whole number
+  // and converting it to an integer if it is
 
   return build_Number(quad, RATIO);
 }
@@ -98,18 +117,21 @@ void Number_destroy(Number *num) {
 }
 
 
-char *Number_to_str(Number *num) {
+UChar *Number_to_str(Number *num) {
   if (num == NULL || num->data == NULL) {
-    return "(null)";
+    UChar *null = malloc(sizeof(UChar)*7);
+    u_uastrcpy(null, "(null)");
+    return null;
   } else {
     //printf("print: %d %p\n", num->type, num->data);
   }
 
+  char *str = NULL;
   if (num->type == INTEGER) {
-    return mpz_get_str(NULL, 10, _i(num));
+    str = mpz_get_str(NULL, 10, _i(num));
   } else if (num->type == FLOAT) {
     mp_exp_t expptr;
-    char *str = mpf_get_str(NULL, &expptr, 10, 0, _f(num));
+    str = mpf_get_str(NULL, &expptr, 10, 0, _f(num));
     int len = strlen(str);
     if (len > expptr) {
       char *tmp = malloc(len+2);
@@ -119,11 +141,18 @@ char *Number_to_str(Number *num) {
       free(str);
       str = tmp;
     }
-    return str;
   } else if (num->type == RATIO) {
-    return mpq_get_str(NULL, 10, _q(num));
-  } else {
-    // unknown type
-    return NULL;
+    str = mpq_get_str(NULL, 10, _q(num));
   }
+  if (str) {
+    UChar *ustr = malloc(sizeof(UChar) * strlen(str));
+    u_uastrcpy(ustr, str);
+    free(str);
+    return ustr;
+  }
+  return NULL;
+}
+
+void Integer_negate(Number *num) {
+  mpz_neg(_i(num), _i(num));
 }
