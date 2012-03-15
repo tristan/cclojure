@@ -3,9 +3,11 @@
 #include <ctype.h>
 #include "numbers.h"
 #include "regex.h"
+#include "object.h"
 #include "string_buffer.h"
 #include "lisp_reader.h"
 #include "unicode_utils.h"
+#include "RT.h"
 #include <unicode/ustdio.h>
 #include <unicode/uchar.h>
 
@@ -17,7 +19,13 @@ U_STRING_DECL(int_pat, "([-+]?)(?:(0)|([1-9][0-9]*)|0[xX]([0-9A-Fa-f]+)|0([0-7]+
 U_STRING_DECL(fl_pat, "([-+]?[0-9]+(\\.[0-9]*)?([eE][-+]?[0-9]+)?)(M)?", 47);
 U_STRING_DECL(ra_pat, "([-+]?[0-9]+)/([0-9]+)", 23);
 
-static int valid_macros[256];
+typedef Object*(*macro_fn)(UFILE *in, UChar ch);
+static macro_fn macros[256];
+
+static Object *read_string(UFILE *in, UChar ch);
+static Object *read_comment(UFILE *in, UChar ch);
+static Object *read_meta(UFILE *in, UChar ch);
+static Object *read_list(UFILE *in, UChar ch);
 
 static void init() {
   if (int_regex == NULL) {
@@ -35,22 +43,22 @@ static void init() {
     ratio_regex = re_compile(ra_pat);
   }
 
-  valid_macros['"'] = 1;
-  valid_macros[';'] = 1;
-  valid_macros['\''] = 1;
-  valid_macros['@'] = 1;
-  valid_macros['^'] = 1;
-  valid_macros['`'] = 1;
-  valid_macros['~'] = 1;
-  valid_macros['('] = 1;
-  valid_macros[')'] = 1;
-  valid_macros['['] = 1;
-  valid_macros[']'] = 1;
-  valid_macros['{'] = 1;
-  valid_macros['}'] = 1;
-  valid_macros['\\'] = 1;
-  valid_macros['%'] = 1;
-  valid_macros['#'] = 1;
+  macros['"'] = read_string;
+  macros[';'] = read_comment;
+  macros['\''] = 0;
+  macros['@'] = 0;
+  macros['^'] = read_meta;
+  macros['`'] = 0;
+  macros['~'] = 0;
+  macros['('] = read_list;
+  macros[')'] = 0;
+  macros['['] = 0;
+  macros[']'] = 0;
+  macros['{'] = 0;
+  macros['}'] = 0;
+  macros['\\'] = 0;
+  macros['%'] = 0;
+  macros['#'] = 0;
 }
 
 static void destroy() {
@@ -68,7 +76,7 @@ static int iswhitespace(UChar ch) {
 }
 
 static int ismacro(UChar ch) {
-  return valid_macros[ch];
+  return macros[ch] != 0 ? 1 : 0;
 }
 
 static Number *match_number(const UChar* s) {
@@ -145,7 +153,7 @@ static Number *match_number(const UChar* s) {
   return NULL;
 }
 
-static Number *read_number(UFILE* in, UChar ch) {
+static Object *read_number(UFILE* in, UChar ch) {
 
   StringBuffer *sb = StringBuffer_new();
   StringBuffer_append_char(sb, ch);
@@ -159,27 +167,46 @@ static Number *read_number(UFILE* in, UChar ch) {
     StringBuffer_append_char(sb, ch);
   }
 
-  UChar *str = StringBuffer_to_string(sb);
+  UChar *str = StringBuffer_toString(sb);
   Number *n = match_number(str);
 
   if (n == NULL) {
     u_printf("Invalid Number: %S\n", str);
-  } else {
-    UChar *sn = Number_to_str(n);
-    u_printf("Got Number: %S\n", sn);
-    free(sn);
   }
 
   free(str);
   StringBuffer_destroy(sb);
-  return n;
+  return Object_wrap_Number(n);
 }
 
-static UChar read_unicode_char(UFILE *in, UChar ch, int32_t base, int32_t length, int extract) {
-  return 0;
+static UChar read_unicode_char(UFILE *in, UChar initch, int32_t base, int32_t length, int exact) {
+  int32_t uc = u_digit(initch, base);
+  if (uc == -1) {
+    u_printf("Invalid digit: %d\n", uc);
+    return -1;
+  }
+  int i = 1;
+  for (; i < length; ++i) {
+    UChar ch = u_fgetc(in);
+    if (ch == -1 || iswhitespace(ch) || ismacro(ch)) {
+      u_fseek(in, -1, SEEK_CUR);
+      break;
+    }
+    int32_t d = u_digit(ch, base);
+    if (d == -1) {
+      u_printf("Invalid digit: %d\n", uc);
+      return -1;
+    }
+    uc = uc * base + d;
+  }
+  if (i != length && exact) {
+    u_printf("Invalid character length: %d, should be: %d\n", i, length);
+    return -1;
+  }
+  return uc;
 }
 
-static UChar *read_string(UFILE *in) {
+static Object *read_string(UFILE *in, UChar dblq) {
   StringBuffer *sb = StringBuffer_new();
 
   for (UChar ch = u_fgetc(in); ch != '"'; ch = u_fgetc(in)) {
@@ -217,8 +244,13 @@ static UChar *read_string(UFILE *in) {
         break;
       case 'u': // unicode
         ch = u_fgetc(in);
-        if (u_isdigit(ch) || (ch >= 'a' && ch < 'g') || (ch >= 'A' && ch < 'G')) {
+        //if (u_isdigit(ch) || (ch >= 'a' && ch < 'g') || (ch >= 'A' && ch < 'G')) {
+        if (u_digit(ch, 16) != -1) {
           ch = read_unicode_char(in, ch, 16, 4, 1);
+          if (ch == -1) {
+            StringBuffer_destroy(sb);
+            return NULL;
+          }
         } else {
           StringBuffer_destroy(sb);
           u_printf("Invalid unicode escape: \\u%C\n", ch);
@@ -232,6 +264,9 @@ static UChar *read_string(UFILE *in) {
             StringBuffer_destroy(sb);
             puts("Octal escape sequence must be in range [0, 377].");
             return NULL;
+          } else if (ch == -1) {
+            StringBuffer_destroy(sb);
+            return NULL;
           }
         } else {
           StringBuffer_destroy(sb);
@@ -243,9 +278,48 @@ static UChar *read_string(UFILE *in) {
     StringBuffer_append_char(sb, ch);
   }
 
-  UChar *str = StringBuffer_to_string(sb);
+  UChar *str = StringBuffer_toString(sb);
   StringBuffer_destroy(sb);
-  return str;
+  return Object_wrap_String(str);
+}
+
+static Object *read_comment(UFILE *in, UChar semicolon) {
+  UChar ch;
+  do {
+    ch = u_fgetc(in);
+  } while (ch != U_EOF && ch != '\n' && ch != '\r');
+  return NULL;
+}
+
+static Object *read_meta(UFILE *in, UChar ch) {
+  int line = -1;
+  // TODO: change UFILE to a Reader of some kind
+  Object *meta = parse_lisp(in, 1, NULL, 1);
+  if (meta == NULL) {
+    puts("Error getting meta");
+    return NULL;
+  }
+  if (meta->type == SYMBOL_OBJ || meta->type == KEYWORD_OBJ || meta->type == STRING_OBJ) {
+    //meta = Object_wrap_Map(RT_map(RT_TAG_KEY, meta));
+    // TODO:
+  } else if (meta->type != MAP_OBJ) {
+    puts("Metadata must be Symbol,Keyword,String or Map");
+    return NULL;
+  }
+
+  Object *o = parse_lisp(in, 1, NULL, 1);
+  if (o->type == META_OBJ) {
+    // TODO:
+  } else {
+    puts("Metadata can only be applied to IMetas");
+    return NULL;
+  }
+
+  return NULL;
+}
+
+static Object *read_list(UFILE *in, UChar leftparen) {
+  List *list = read_delimited_list(')', r, 1);
 }
 
 static UChar *read_token(UFILE *in, UChar ch) {
@@ -256,14 +330,11 @@ static void *interpret_token(void *token) {
   return NULL;
 }
 
-static void *invoke_macro(UFILE *in, UChar ch) {
-  if (ch == '"') {
-    return read_string(in);
-  }
-  return NULL;
+static Object *invoke_macro(UFILE *in, UChar ch) {
+  return macros[ch](in, ch);
 }
 
-void *parse_lisp(UFILE *in) {
+Object *parse_lisp(UFILE *in, int eof_is_error, Object *eof_value, int is_recursive) {
   UChar ch;
   init();
 
@@ -271,8 +342,12 @@ void *parse_lisp(UFILE *in) {
     while (iswhitespace(ch = u_fgetc(in))) ;
 
     if (ch == U_EOF) {
-      puts("EOF");
-      return NULL;
+      if (eof_is_error) {
+        puts("EOF");
+        return NULL;
+      } else {
+        return eof_value;
+      }
     }
 
     if (u_isdigit(ch)) {

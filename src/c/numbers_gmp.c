@@ -117,10 +117,10 @@ void Number_destroy(Number *num) {
 }
 
 
-UChar *Number_to_str(Number *num) {
+UChar *Number_toString(Number *num) {
   if (num == NULL || num->data == NULL) {
-    UChar *null = malloc(sizeof(UChar)*7);
-    u_uastrcpy(null, "(null)");
+    UChar *null = malloc(sizeof(UChar)*4);
+    u_uastrcpy(null, "nil");
     return null;
   } else {
     //printf("print: %d %p\n", num->type, num->data);

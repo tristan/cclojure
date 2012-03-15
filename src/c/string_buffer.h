@@ -27,6 +27,6 @@ StringBuffer *StringBuffer_append_long(StringBuffer *self, long l);
 
 int32_t StringBuffer_length(StringBuffer *self);
 
-UChar* StringBuffer_to_string(StringBuffer *self);
+UChar* StringBuffer_toString(StringBuffer *self);
 
 #endif

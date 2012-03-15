@@ -102,8 +102,8 @@ int StringBuffer_length(StringBuffer *self) {
   return self->len;
 }
 
-UChar* StringBuffer_to_string(StringBuffer *self) {
-  UChar *rval = malloc(self->len + 1);
+UChar* StringBuffer_toString(StringBuffer *self) {
+  UChar *rval = malloc((self->len + 1) * sizeof(UChar));
   u_strcpy(rval, self->string);
   return rval;
 }

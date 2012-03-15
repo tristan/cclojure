@@ -1,8 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "regex.h"
-#include "numbers.h"
+#include "object.h"
 
 static regex_t *re = NULL;
 

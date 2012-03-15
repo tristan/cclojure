@@ -26,8 +26,7 @@ Number *Ratio_init_str(const UChar *snum, const UChar *sden);
 
 void Number_destroy(Number *num);
 
-UChar *Number_to_str(Number *num);
-
+UChar *Number_toString(Number *num);
 
 void Integer_negate(Number *num);
 

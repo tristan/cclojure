@@ -1,0 +1,15 @@
+#ifndef _classes_h
+#define _classes_h
+
+enum {
+  OBJECT_CLASS,
+  READER_CLASS,
+  FILEREADER_CLASS,
+  LINENUMBERREADER_CLASS,
+  NUMBER_CLASS,
+  INTEGER_CLASS,
+  DECIMAL_CLASS,
+  RATIO_CLASS
+};
+
+#endif
