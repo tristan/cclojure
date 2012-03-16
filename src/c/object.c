@@ -26,3 +26,8 @@ int Object_getClass(void *self) {
 int Object_instanceOf(void *self, int class) {
   return class == OBJECT_CLASS;
 }
+
+int Object_equals(void *self, void *obj) {
+  // this should never be called, but if it does, return false
+  return 0;
+}

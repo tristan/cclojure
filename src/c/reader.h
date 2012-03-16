@@ -5,14 +5,14 @@
 #include "object.h"
 
 #define _extend_Reader \
-  _extend_Object \
+  _extend_Object; \
   UChar (*read)(void *self); \
   UChar (*unread)(void *self, UChar ch); \
   void (*reset)(void *self); \
-  long (*skip)(void *self, long n);
+  long (*skip)(void *self, long n)
 
 struct Reader {
-  _extend_Reader
+  _extend_Reader;
 };
 
 typedef struct Reader Reader;
@@ -31,7 +31,8 @@ int Reader_instanceOf(void *reader, int class);
   if (!T##Proto.toString) T##Proto.toString = Reader_toString; \
   if (!T##Proto.getClass) T##Proto.getClass = Reader_getClass; \
   if (!T##Proto.instanceOf) T##Proto.instanceOf = Reader_instanceOf; \
-  T *O = calloc(1, sizeof(T));                          \
+  if (!T##Proto.equals) T##Proto.equals = Object_equals; \
+  T *O = calloc(1, sizeof(T)); \
   *((Reader*)O) = T##Proto
 
 #endif

@@ -1,9 +1,11 @@
 #include <string.h>
 #include <unicode/ustring.h>
 #include <gmp.h>
-#include "integer.h"
+#include "numbers.h"
 
 #define _i(N) *(mpz_t*)((Integer*)N)->_num
+#define _d(N) *(mpf_t*)((Decimal*)N)->_num
+#define _r(N) *(mpq_t*)((Ratio*)N)->_num
 
 int Integer_init(void *self, void *num) {
   mpz_t* it = malloc(sizeof(mpz_t));
@@ -40,12 +42,47 @@ UChar *Integer_toString(void *self) {
   return NULL;
 }
 
+int Integer_equals(void *self, void* obj) {
+  if (((Object*)self)->getClass(self) != Integer_getClass(self)) {
+    puts("calling Integer_equals on non integer object is strange!");
+  } else {
+    switch (((Object*)obj)->getClass(obj)) {
+    case INTEGER_CLASS:
+      if (mpz_cmp(_i(self), _i(obj)) == 0) {
+        return 1;
+      }
+      break;
+    case DECIMAL_CLASS:
+      if (mpf_integer_p(_d(obj))) {
+        mpz_t tmp;
+        mpz_init(tmp);
+        mpz_set_f(tmp, _d(obj));
+        int rval = (mpz_cmp(_i(self), tmp) == 0);
+        mpz_clear(tmp);
+        return rval;
+      }
+      break;
+    case RATIO_CLASS:
+      {
+        mpq_t tmp;
+        mpq_init(tmp);
+        mpq_set_z(tmp, _i(self));
+        int rval = mpq_equal(tmp, _r(obj));
+        mpq_clear(tmp);
+        return rval;
+      }
+    }
+  }
+  return 0;
+}
+
 Number IntegerProto = {
   .init = Integer_init,
   .destroy = Integer_destroy,
   .getClass = Integer_getClass,
   .toString = Integer_toString,
   .instanceOf = Integer_instanceOf,
+  .equals = Integer_equals
 };
 
 Integer *Integer_new() {

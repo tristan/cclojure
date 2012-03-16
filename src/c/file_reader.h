@@ -5,11 +5,11 @@
 #include "reader.h"
 
 #define _extend_FileReader \
-  _extend_Reader \
-  UFILE *file;
+  _extend_Reader; \
+  UFILE *file
 
 struct FileReader {
-  _extend_FileReader
+  _extend_FileReader;
 };
 
 typedef struct FileReader FileReader;

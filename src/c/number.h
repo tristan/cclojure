@@ -5,10 +5,10 @@
 #include "object.h"
 
 #define _extend_Number \
-  _extend_Object \
+  _extend_Object
 
 struct Number {
-  _extend_Number
+  _extend_Number;
 };
 
 typedef struct Number Number;
@@ -23,7 +23,8 @@ int Number_instanceOf(void *reader, int class);
   if (!T##Proto.toString) T##Proto.toString = Number_toString; \
   if (!T##Proto.getClass) T##Proto.getClass = Number_getClass; \
   if (!T##Proto.instanceOf) T##Proto.instanceOf = Number_instanceOf; \
-  T *O = calloc(1, sizeof(T));                          \
+  if (!T##Proto.equals) T##Proto.equals = Object_equals; \
+  T *O = calloc(1, sizeof(T)); \
   *((Number*)O) = T##Proto
 
 #endif

@@ -5,11 +5,11 @@
 #include "number.h"
 
 #define _extend_Integer \
-  _extend_Number \
-  void *_num;
+  _extend_Number; \
+  void *_num
 
 struct Integer {
-  _extend_Integer
+  _extend_Integer;
 };
 
 typedef struct Integer Integer;

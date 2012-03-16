@@ -6,13 +6,13 @@
 #include "integer.h"
 
 #define _extend_Ratio \
-  _extend_Number \
+  _extend_Number; \
   Integer *(*numerator)(void *self); \
   Integer *(*denominator)(void *self); \
-  void *_num;
+  void *_num
 
 struct Ratio {
-  _extend_Ratio
+  _extend_Ratio;
 };
 
 typedef struct Ratio Ratio;

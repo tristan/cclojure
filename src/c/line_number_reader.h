@@ -5,13 +5,13 @@
 #include "reader.h"
 
 #define _extend_LineNumberReader \
-  _extend_Reader \
+  _extend_Reader; \
   int (*getLineNumber)(void *self); \
   Reader *reader; \
-  int _linenum;
+  int _linenum
 
 struct LineNumberReader {
-  _extend_LineNumberReader
+  _extend_LineNumberReader;
 };
 
 typedef struct LineNumberReader LineNumberReader;

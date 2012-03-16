@@ -1,9 +1,11 @@
 #include <string.h>
 #include <unicode/ustring.h>
 #include <gmp.h>
-#include "decimal.h"
+#include "numbers.h"
 
+#define _i(N) *(mpz_t*)((Integer*)N)->_num
 #define _d(N) *(mpf_t*)((Decimal*)N)->_num
+#define _r(N) *(mpq_t*)((Ratio*)N)->_num
 
 int Decimal_init(void *self, void *num) {
   mpf_t* dt = malloc(sizeof(mpf_t));
@@ -50,12 +52,47 @@ UChar *Decimal_toString(void *self) {
   return NULL;
 }
 
+int Decimal_equals(void *self, void* obj) {
+  if (((Object*)self)->getClass(self) != Decimal_getClass(self)) {
+    puts("calling Decimal_equals on non decimal object is strange!");
+  } else {
+    switch (((Object*)obj)->getClass(obj)) {
+    case INTEGER_CLASS:
+      if (mpf_integer_p(_d(self))) {
+        mpz_t tmp;
+        mpz_init(tmp);
+        mpz_set_f(tmp, _d(self));
+        int rval = (mpz_cmp(tmp, _i(obj)) == 0);
+        mpz_clear(tmp);
+        return rval;
+      }
+      break;
+    case DECIMAL_CLASS:
+      if (mpf_cmp(_d(self), _d(obj)) == 0) {
+        return 1;
+      }
+      break;
+    case RATIO_CLASS:
+      {
+        mpf_t tmp;
+        mpf_init(tmp);
+        mpf_set_q(tmp, _r(obj));
+        int rval = (mpf_cmp(_d(self), tmp) == 0);
+        mpf_clear(tmp);
+        return rval;
+      }
+    }
+  }
+  return 0;
+}
+
 Number DecimalProto = {
   .init = Decimal_init,
   .destroy = Decimal_destroy,
   .getClass = Decimal_getClass,
   .toString = Decimal_toString,
   .instanceOf = Decimal_instanceOf,
+  .equals = Decimal_equals
 };
 
 Decimal *Decimal_new() {
