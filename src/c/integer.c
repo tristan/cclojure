@@ -34,37 +34,50 @@ UChar *Integer_toString(void *self) {
 }
 
 int Integer_equals(void *self, void* obj) {
+#ifdef _DEBUG
   if (((Object*)self)->getClass(self) != Integer_getClass(self)) {
     puts("calling Integer_equals on non integer object is strange!");
-  } else {
-    switch (((Object*)obj)->getClass(obj)) {
-    case INTEGER_CLASS:
-      if (mpz_cmp(_i(self), _i(obj)) == 0) {
-        return 1;
-      }
-      break;
-    case DECIMAL_CLASS:
-      if (mpf_integer_p(_d(obj))) {
-        mpz_t tmp;
-        mpz_init(tmp);
-        mpz_set_f(tmp, _d(obj));
-        int rval = (mpz_cmp(_i(self), tmp) == 0);
-        mpz_clear(tmp);
-        return rval;
-      }
-      break;
-    case RATIO_CLASS:
-      {
-        mpq_t tmp;
-        mpq_init(tmp);
-        mpq_set_z(tmp, _i(self));
-        int rval = mpq_equal(tmp, _r(obj));
-        mpq_clear(tmp);
-        return rval;
-      }
+    return 0;
+  }
+#endif
+  switch (((Object*)obj)->getClass(obj)) {
+  case INTEGER_CLASS:
+    if (mpz_cmp(_i(self), _i(obj)) == 0) {
+      return 1;
+    }
+    break;
+  case DECIMAL_CLASS:
+    if (mpf_integer_p(_d(obj))) {
+      mpz_t tmp;
+      mpz_init(tmp);
+      mpz_set_f(tmp, _d(obj));
+      int rval = (mpz_cmp(_i(self), tmp) == 0);
+      mpz_clear(tmp);
+      return rval;
+    }
+    break;
+  case RATIO_CLASS:
+    {
+      mpq_t tmp;
+      mpq_init(tmp);
+      mpq_set_z(tmp, _i(self));
+      int rval = mpq_equal(tmp, _r(obj));
+      mpq_clear(tmp);
+      return rval;
     }
   }
   return 0;
+}
+
+void *Integer_negate(void *self) {
+#ifdef _DEBUG
+  if (((Object*)self)->getClass(self) != Integer_getClass(self)) {
+    puts("calling Integer_equals on non integer object is strange!");
+    return self;
+  }
+#endif
+  mpz_neg(_i(self), _i(self));
+  return self;
 }
 
 Number IntegerProto = {
@@ -72,7 +85,9 @@ Number IntegerProto = {
   .getClass = Integer_getClass,
   .toString = Integer_toString,
   .instanceOf = Integer_instanceOf,
-  .equals = Integer_equals
+  .equals = Integer_equals,
+
+  .negate = Integer_negate
 };
 
 Integer *Integer_new(int num) {

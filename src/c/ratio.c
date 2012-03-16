@@ -97,6 +97,34 @@ Ratio *Ratio_new_I(Integer* numerator, Integer* denominator) {
   return obj;
 }
 
+Ratio *Ratio_new_s(const UChar *numerator, const UChar *denominator) {
+  _super_Number_new(Ratio, obj);
+
+  char *adivid = malloc(u_strlen(numerator)+1);
+  char *adivis = malloc(u_strlen(denominator)+1);
+  u_austrcpy(adivid, numerator);
+  u_austrcpy(adivis, denominator);
+
+  mpq_t num;
+  mpq_t den;
+  mpq_inits(num, den, NULL);
+  if (mpq_set_str(num, adivid, 10) != 0) return NULL;
+  if (mpq_set_str(den, adivis, 10) != 0) return NULL;
+
+  mpq_t *quad = malloc(sizeof(mpq_t));
+  mpq_init(*quad);
+  mpq_div(*quad, num, den);
+
+  mpq_clear(num);
+  mpq_clear(den);
+
+  free(adivid);
+  free(adivis);
+
+  obj->_num = quad;
+  return obj;
+}
+
 Ratio *Ratio_valueOf(const UChar *s) {
   _super_Number_new(Ratio, obj);
   char *astr = malloc(u_strlen(s)+1);

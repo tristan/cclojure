@@ -1,6 +1,8 @@
 #ifndef _object_h
 #define _object_h
 
+#define _DEBUG 1
+
 #include <stdlib.h>
 #include <unicode/uchar.h>
 #include "classes.h"

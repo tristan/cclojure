@@ -5,7 +5,7 @@
 #include "file_reader.h"
 #include "line_number_reader.h"
 #include "unicode_utils.h"
-//#include "lisp_reader.h"
+#include "lisp_reader.h"
 
 int main(int argc, char *argv[]) {
 
@@ -18,9 +18,11 @@ int main(int argc, char *argv[]) {
   FileReader *fr = FileReader_new_u(f);
   LineNumberReader *lnr = LineNumberReader_new((Reader*)fr);
 
-  UChar *str = lnr->toString(lnr);
-  u_printf("%S\n", str);
-  free(str);
+  Object *o = parse_lisp((Reader*)lnr, 1, NULL, 1);
+  UChar *s = o->toString(o);
+  u_printf("%S\n", s);
+  free(s);
+  o->destroy(o);
 
   lnr->destroy(lnr);
   fr->destroy(fr);

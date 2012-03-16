@@ -9,8 +9,9 @@
 #include "string.h"
 #include "string_buffer.h"
 #include "lisp_reader.h"
+#include "line_number_reader.h"
 #include "unicode_utils.h"
-#include "RT.h"
+//#include "RT.h"
 
 static regex_t *int_regex = NULL;
 static regex_t *float_regex = NULL;
@@ -20,14 +21,14 @@ U_STRING_DECL(int_pat, "([-+]?)(?:(0)|([1-9][0-9]*)|0[xX]([0-9A-Fa-f]+)|0([0-7]+
 U_STRING_DECL(fl_pat, "([-+]?[0-9]+(\\.[0-9]*)?([eE][-+]?[0-9]+)?)(M)?", 47);
 U_STRING_DECL(ra_pat, "([-+]?[0-9]+)/([0-9]+)", 23);
 
-typedef Object*(*macro_fn)(UFILE *in, UChar ch);
+typedef Object*(*macro_fn)(Reader *r, UChar ch);
 static macro_fn macros[256];
 
 // private functions
-static Object *read_string(UFILE *in, UChar ch);
-static Object *read_comment(UFILE *in, UChar ch);
-static Object *read_meta(UFILE *in, UChar ch);
-static Object *read_list(UFILE *in, UChar ch);
+static Object *read_string(Reader *r, UChar ch);
+static Object *read_comment(Reader *r, UChar ch);
+static Object *read_meta(Reader *r, UChar ch);
+static Object *read_list(Reader *r, UChar ch);
 
 static int initialised = 0;
 static void init() {
@@ -81,6 +82,9 @@ static int iswhitespace(UChar ch) {
 static int ismacro(UChar ch) {
   return macros[ch] != 0 ? 1 : 0;
 }
+static Object *invoke_macro(Reader *r, UChar ch) {
+  return macros[ch](r, ch);
+}
 
 static Number *match_number(const UChar* s) {
 
@@ -89,7 +93,7 @@ static Number *match_number(const UChar* s) {
     UChar *n = NULL;
     n = re_group(match, 2);
     if (n != NULL) {
-      Number *num = Integer_init_int(0);
+      Number *num = (Number*)Integer_new(0);
       regmatch_destroy(match);
       free(n);
       return num;
@@ -116,9 +120,9 @@ static Number *match_number(const UChar* s) {
     if (n == NULL) {
       return NULL;
     } else {
-      Number *num = Integer_init_str(n, radix);
+      Number *num = (Number*)Integer_valueOf(n, radix);
       if (negate) {
-        Integer_negate(num);
+        num->negate(num);
       }
       free(n);
       regmatch_destroy(match);
@@ -131,10 +135,10 @@ static Number *match_number(const UChar* s) {
     UChar *n = NULL;
     Number *num = NULL;
     if ((n = re_group(match, 4)) != NULL) {
-      num = Float_init_str(n);
+      num = (Number*)Decimal_valueOf(n);
       free(n);
     } else {
-      num = Float_init_str(s);
+      num = (Number*)Decimal_valueOf(s);
     }
     regmatch_destroy(match);
     return num;
@@ -145,7 +149,7 @@ static Number *match_number(const UChar* s) {
     UChar *snum, *sden;
     snum = re_group(match, 1);
     sden = re_group(match, 2);
-    Number *rat = Ratio_init_str(snum, sden);
+    Number *rat = (Number*)Ratio_new_s(snum, sden);
     
     free(snum);
     free(sden);
@@ -179,7 +183,7 @@ static Object *read_number(Reader* r, UChar ch) {
 
   free(str);
   StringBuffer_destroy(sb);
-  return Object_wrap_Number(n);
+  return (Object*)n;
 }
 
 static UChar read_unicode_char(Reader *r, UChar initch, int32_t base, int32_t length, int exact) {
@@ -283,7 +287,7 @@ static Object *read_string(Reader *r, UChar dblq) {
 
   UChar *str = StringBuffer_toString(sb);
   StringBuffer_destroy(sb);
-  String *s = String_new(str);
+  String *s = String_new_u(str);
   free(str);
   return (Object*)s;
 }
@@ -293,13 +297,13 @@ static Object *read_comment(Reader *r, UChar semicolon) {
   do {
     ch = r->read(r);
   } while (ch != U_EOF && ch != '\n' && ch != '\r');
-  return r;
+  return (Object*)r;
 }
 
 static Object *read_meta(Reader *r, UChar ch) {
+  /*
   int line = -1;
-  // TODO: change UFILE to a Reader of some kind
-  Object *meta = parse_lisp(in, 1, NULL, 1);
+  Object *meta = parse_lisp(r, 1, NULL, 1);
   if (meta == NULL) {
     puts("Error getting meta");
     return NULL;
@@ -312,31 +316,71 @@ static Object *read_meta(Reader *r, UChar ch) {
     return NULL;
   }
 
-  Object *o = parse_lisp(in, 1, NULL, 1);
+  Object *o = parse_lisp(r, 1, NULL, 1);
   if (o->type == META_OBJ) {
     // TODO:
   } else {
     puts("Metadata can only be applied to IMetas");
     return NULL;
   }
-
+  */
   return NULL;
 }
 
-static Object *read_list(UFILE *in, UChar leftparen) {
-  List *list = read_delimited_list(')', r, 1);
+Object *read_delimited_list(UChar delim, Reader *r, int is_recursive) {
+  // List *a = (List*)ArrayList_new();
+  UChar ch;
+  for (;;) {
+    while (iswhitespace(ch = r->read(r))) ;
+
+    if (ch == U_EOF) {
+      puts("EOF while reading");
+      return NULL;
+    }
+
+    if (ch == delim) {
+      break;
+    }
+
+    if (ismacro(ch)) {
+      Object *o = invoke_macro(r, ch);
+      if (o != NULL) {
+        // a->add(a, o)
+      }
+    } else {
+      r->unread(r, ch);
+      Object *o = parse_lisp(r, 1, NULL, is_recursive);
+      if (o != (Object*)r) {
+        // a->add(a, o);
+      }
+    }
+  }
+
+  return // a;
+    NULL;
 }
 
-static UChar *read_token(UFILE *in, UChar ch) {
+static Object *read_list(Reader *r, UChar leftparen) {
+  int line = -1;
+  if (r->instanceOf(r, LINENUMBERREADER_CLASS)) {
+    line = ((LineNumberReader*)r)->getLineNumber(r);
+  }
+  //List *list = 
+  Object *list = read_delimited_list(')', r, 1);
+  // if (list->isEmpty(list)) return PersistentList.EMPTY;
+  if (line != -1) {
+    return list; // WITH META
+  } else {
+    return list;
+  }
+}
+
+static UChar *read_token(Reader *r, UChar ch) {
   return NULL;
 }
 
 static void *interpret_token(void *token) {
   return NULL;
-}
-
-static Object *invoke_macro(UFILE *in, UChar ch) {
-  return macros[ch](in, ch);
 }
 
 Object *parse_lisp(Reader *r, int eof_is_error, Object *eof_value, int is_recursive) {
@@ -346,7 +390,7 @@ Object *parse_lisp(Reader *r, int eof_is_error, Object *eof_value, int is_recurs
 
   UChar ch;
   for (;;) {
-    while (iswhitespace(ch = r->read(r)) ;
+    while (iswhitespace(ch = r->read(r))) ;
 
     if (ch == U_EOF) {
       if (eof_is_error) {
@@ -358,26 +402,26 @@ Object *parse_lisp(Reader *r, int eof_is_error, Object *eof_value, int is_recurs
     }
 
     if (u_isdigit(ch)) {
-      return (Object*)read_number(in, ch);
+      return (Object*)read_number(r, ch);
     }
 
     if (ismacro(ch)) {
       // TODO; check op macro return type?
-      return invoke_macro(in, ch);
+      return invoke_macro(r, ch);
     }
 
     if (ch == '+' || ch == '-') {
       UChar ch2 = r->read(r);
       if (u_isdigit(ch2)) {
         r->unread(r, ch2);
-        return read_number(in, ch);
+        return read_number(r, ch);
       }
       // TODO: clj does an unread here, i'm not sure why!
       // the unread here isn't covered by fseek, since if
       // read_number is called, ch2 will not be at pos SEEK_CUR-1
     }
 
-    String *token = read_token(in, ch);
+    UChar *token = read_token(r, ch);
     interpret_token(token);
   }
 

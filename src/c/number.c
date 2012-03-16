@@ -14,3 +14,7 @@ int Number_instanceOf(void *self, int class) {
   return class == NUMBER_CLASS || Object_instanceOf(self, class);
 }
 
+void *Number_negate(void *self) {
+  puts("negate not supported by this number type");
+  return self;
+}
