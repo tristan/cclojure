@@ -3,7 +3,9 @@
 
 #include <unicode/ustdio.h>
 #include "object.h"
+#include "reader.h"
 
-Object *parse_lisp(UFILE *fd, int eof_is_error, Object *eof_value, int is_recursive);
+Object *parse_lisp(Reader *r, int eof_is_error, Object *eof_value, int is_recursive);
+void LispReader_shutdown();
 
 #endif

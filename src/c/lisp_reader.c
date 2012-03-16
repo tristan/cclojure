@@ -1,15 +1,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <unicode/ustdio.h>
+#include <unicode/uchar.h>
+
 #include "numbers.h"
 #include "regex.h"
-#include "object.h"
+#include "string.h"
 #include "string_buffer.h"
 #include "lisp_reader.h"
 #include "unicode_utils.h"
 #include "RT.h"
-#include <unicode/ustdio.h>
-#include <unicode/uchar.h>
 
 static regex_t *int_regex = NULL;
 static regex_t *float_regex = NULL;
@@ -22,11 +23,13 @@ U_STRING_DECL(ra_pat, "([-+]?[0-9]+)/([0-9]+)", 23);
 typedef Object*(*macro_fn)(UFILE *in, UChar ch);
 static macro_fn macros[256];
 
+// private functions
 static Object *read_string(UFILE *in, UChar ch);
 static Object *read_comment(UFILE *in, UChar ch);
 static Object *read_meta(UFILE *in, UChar ch);
 static Object *read_list(UFILE *in, UChar ch);
 
+static int initialised = 0;
 static void init() {
   if (int_regex == NULL) {
     U_STRING_INIT(int_pat, "([-+]?)(?:(0)|([1-9][0-9]*)|0[xX]([0-9A-Fa-f]+)|0([0-7]+)|([1-9][0-9]?)[rR]([0-9A-Za-z]+)|0[0-9]+)", 99);
@@ -61,7 +64,7 @@ static void init() {
   macros['#'] = 0;
 }
 
-static void destroy() {
+void LispReader_shutdown() {
   regex_destroy(int_regex);
   regex_destroy(float_regex);
   regex_destroy(ratio_regex);
@@ -153,15 +156,15 @@ static Number *match_number(const UChar* s) {
   return NULL;
 }
 
-static Object *read_number(UFILE* in, UChar ch) {
+static Object *read_number(Reader* r, UChar ch) {
 
   StringBuffer *sb = StringBuffer_new();
   StringBuffer_append_char(sb, ch);
 
   for (;;) {
-    ch = u_fgetc(in);
+    ch = r->read(r);
     if (ch == U_EOF || iswhitespace(ch) || ismacro(ch)) {
-      u_fseek(in, -1, SEEK_CUR);
+      r->unread(r, ch);
       break;
     }
     StringBuffer_append_char(sb, ch);
@@ -179,7 +182,7 @@ static Object *read_number(UFILE* in, UChar ch) {
   return Object_wrap_Number(n);
 }
 
-static UChar read_unicode_char(UFILE *in, UChar initch, int32_t base, int32_t length, int exact) {
+static UChar read_unicode_char(Reader *r, UChar initch, int32_t base, int32_t length, int exact) {
   int32_t uc = u_digit(initch, base);
   if (uc == -1) {
     u_printf("Invalid digit: %d\n", uc);
@@ -187,9 +190,9 @@ static UChar read_unicode_char(UFILE *in, UChar initch, int32_t base, int32_t le
   }
   int i = 1;
   for (; i < length; ++i) {
-    UChar ch = u_fgetc(in);
+    UChar ch = r->read(r);
     if (ch == -1 || iswhitespace(ch) || ismacro(ch)) {
-      u_fseek(in, -1, SEEK_CUR);
+      r->unread(r, ch);
       break;
     }
     int32_t d = u_digit(ch, base);
@@ -206,17 +209,17 @@ static UChar read_unicode_char(UFILE *in, UChar initch, int32_t base, int32_t le
   return uc;
 }
 
-static Object *read_string(UFILE *in, UChar dblq) {
+static Object *read_string(Reader *r, UChar dblq) {
   StringBuffer *sb = StringBuffer_new();
 
-  for (UChar ch = u_fgetc(in); ch != '"'; ch = u_fgetc(in)) {
+  for (UChar ch = r->read(r); ch != '"'; ch = r->read(r)) {
     if (ch == -1) {
       StringBuffer_destroy(sb);
       puts("EOF while reading string");
       return NULL;
     }
     if (ch == '\\') { // escape
-      ch = u_fgetc(in);
+      ch = r->read(r);
       if (ch == -1) {
         StringBuffer_destroy(sb);
         puts("EOF while reading string");
@@ -243,10 +246,10 @@ static Object *read_string(UFILE *in, UChar dblq) {
         ch = '\f';
         break;
       case 'u': // unicode
-        ch = u_fgetc(in);
+        ch = r->read(r);
         //if (u_isdigit(ch) || (ch >= 'a' && ch < 'g') || (ch >= 'A' && ch < 'G')) {
         if (u_digit(ch, 16) != -1) {
-          ch = read_unicode_char(in, ch, 16, 4, 1);
+          ch = read_unicode_char(r, ch, 16, 4, 1);
           if (ch == -1) {
             StringBuffer_destroy(sb);
             return NULL;
@@ -259,7 +262,7 @@ static Object *read_string(UFILE *in, UChar dblq) {
         break;
       default:
         if (u_isdigit(ch)) {
-          ch = read_unicode_char(in, ch, 8, 3, 0);
+          ch = read_unicode_char(r, ch, 8, 3, 0);
           if (ch > 0377) {
             StringBuffer_destroy(sb);
             puts("Octal escape sequence must be in range [0, 377].");
@@ -280,18 +283,20 @@ static Object *read_string(UFILE *in, UChar dblq) {
 
   UChar *str = StringBuffer_toString(sb);
   StringBuffer_destroy(sb);
-  return Object_wrap_String(str);
+  String *s = String_new(str);
+  free(str);
+  return (Object*)s;
 }
 
-static Object *read_comment(UFILE *in, UChar semicolon) {
+static Object *read_comment(Reader *r, UChar semicolon) {
   UChar ch;
   do {
-    ch = u_fgetc(in);
+    ch = r->read(r);
   } while (ch != U_EOF && ch != '\n' && ch != '\r');
-  return NULL;
+  return r;
 }
 
-static Object *read_meta(UFILE *in, UChar ch) {
+static Object *read_meta(Reader *r, UChar ch) {
   int line = -1;
   // TODO: change UFILE to a Reader of some kind
   Object *meta = parse_lisp(in, 1, NULL, 1);
@@ -334,12 +339,14 @@ static Object *invoke_macro(UFILE *in, UChar ch) {
   return macros[ch](in, ch);
 }
 
-Object *parse_lisp(UFILE *in, int eof_is_error, Object *eof_value, int is_recursive) {
-  UChar ch;
-  init();
+Object *parse_lisp(Reader *r, int eof_is_error, Object *eof_value, int is_recursive) {
+  if (!initialised) {
+    init();
+  }
 
+  UChar ch;
   for (;;) {
-    while (iswhitespace(ch = u_fgetc(in))) ;
+    while (iswhitespace(ch = r->read(r)) ;
 
     if (ch == U_EOF) {
       if (eof_is_error) {
@@ -351,7 +358,7 @@ Object *parse_lisp(UFILE *in, int eof_is_error, Object *eof_value, int is_recurs
     }
 
     if (u_isdigit(ch)) {
-      return read_number(in, ch);
+      return (Object*)read_number(in, ch);
     }
 
     if (ismacro(ch)) {
@@ -360,9 +367,9 @@ Object *parse_lisp(UFILE *in, int eof_is_error, Object *eof_value, int is_recurs
     }
 
     if (ch == '+' || ch == '-') {
-      UChar ch2 = u_fgetc(in);
+      UChar ch2 = r->read(r);
       if (u_isdigit(ch2)) {
-        u_fseek(in, -1, SEEK_CUR);
+        r->unread(r, ch2);
         return read_number(in, ch);
       }
       // TODO: clj does an unread here, i'm not sure why!
@@ -370,7 +377,7 @@ Object *parse_lisp(UFILE *in, int eof_is_error, Object *eof_value, int is_recurs
       // read_number is called, ch2 will not be at pos SEEK_CUR-1
     }
 
-    UChar *token = read_token(in, ch);
+    String *token = read_token(in, ch);
     interpret_token(token);
   }
 
