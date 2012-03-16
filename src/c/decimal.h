@@ -14,7 +14,7 @@ struct Decimal {
 
 typedef struct Decimal Decimal;
 
-Decimal *Decimal_new();
+Decimal *Decimal_new(double num);
 Decimal *Decimal_valueOf(const UChar *s);
 
 #endif

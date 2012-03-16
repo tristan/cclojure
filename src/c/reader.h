@@ -22,7 +22,6 @@ int Reader_getClass(void *reader);
 int Reader_instanceOf(void *reader, int class);
 
 #define _super_Reader_new(T, O) \
-  if (!T##Proto.init) return NULL; \
   if (!T##Proto.read) return NULL; \
   if (!T##Proto.unread) return NULL; \
   if (!T##Proto.reset) return NULL; \

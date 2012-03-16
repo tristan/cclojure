@@ -1,12 +1,6 @@
 #include <stdio.h>
 #include "line_number_reader.h"
 
-int LineNumberReader_init(void *self, void *reader) {
-  ((LineNumberReader*)self)->reader = (Reader*)reader;
-  ((LineNumberReader*)self)->_linenum = 0;
-  return 1;
-}
-
 UChar LineNumberReader_read(void *self) {
   Reader *r = ((LineNumberReader*)self)->reader;
   UChar ch = r->read(r);
@@ -57,9 +51,11 @@ UChar *LineNumberReader_toString(void *self) {
   return str;
 }
 
+int LineNumberReader_getLineNumber(void *self) {
+  return ((LineNumberReader*)self)->_linenum;
+}
+
 Reader LineNumberReaderProto = {
-  .init = LineNumberReader_init,
-  // .destroy = LineNumberReader_destroy,
   .getClass = LineNumberReader_getClass,
   .toString = LineNumberReader_toString,
   .instanceOf = LineNumberReader_instanceOf,
@@ -70,12 +66,11 @@ Reader LineNumberReaderProto = {
   .skip = LineNumberReader_skip
 };
 
-int LineNumberReader_getLineNumber(void *self) {
-  return ((LineNumberReader*)self)->_linenum;
-}
-
-LineNumberReader *LineNumberReader_new() {
+LineNumberReader *LineNumberReader_new(Reader *reader) {
   _super_Reader_new(LineNumberReader, obj);
   obj->getLineNumber = LineNumberReader_getLineNumber;
+
+  obj->reader = (Reader*)reader;
+  obj->_linenum = 0;
   return obj;
 }

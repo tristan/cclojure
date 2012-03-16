@@ -16,15 +16,6 @@ struct LineNumberReader {
 
 typedef struct LineNumberReader LineNumberReader;
 
-LineNumberReader *LineNumberReader_new();
-int LineNumberReader_init(void *self, void *reader);
-//UChar *Reader_toString(void *reader);
-//int LineNumberReader_getClass(void *self);
-void LineNumberReader_destroy(void *self);
-
-UChar LineNumberReader_read(void *self);
-UChar LineNumberReader_unread(void *self, UChar ch);
-void LineNumberReader_reset(void *self);
-long LineNumberReader_skip(void *self, long n);
+LineNumberReader *LineNumberReader_new(Reader *reader);
 
 #endif

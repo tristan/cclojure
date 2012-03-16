@@ -1,25 +1,20 @@
 #include <stdio.h>
 #include "file_reader.h"
 
-int FileReader_init(void *self, void *ufile) {
-  ((FileReader*)self)->file = (UFILE*)ufile;
-  return 1;
-}
-
 UChar FileReader_read(void *self) {
-  return u_fgetc(((FileReader*)self)->file);
+  return u_fgetc(((FileReader*)self)->_file);
 }
 
 UChar FileReader_unread(void *self, UChar ch) {
-  return u_fungetc(ch, ((FileReader*)self)->file);
+  return u_fungetc(ch, ((FileReader*)self)->_file);
 }
 
 void FileReader_reset(void *self) {
-  u_frewind(((FileReader*)self)->file);
+  u_frewind(((FileReader*)self)->_file);
 }
 
 long FileReader_skip(void *self, long n) {
-  FILE *f = u_fgetfile(((FileReader*)self)->file);
+  FILE *f = u_fgetfile(((FileReader*)self)->_file);
   long s = ftell(f);
   if (fseek(f, n, SEEK_CUR) == 0) {
     return n;
@@ -47,9 +42,15 @@ UChar *FileReader_toString(void *self) {
   return str;
 }
 
+void FileReader_destroy(void *self) {
+  if (((FileReader*)self)->_close) {
+    u_fclose(((FileReader*)self)->_file);
+  }
+  free(self);
+}
+
 Reader FileReaderProto = {
-  .init = FileReader_init,
-  // .destroy = FileReader_destroy,
+  .destroy = FileReader_destroy,
   .getClass = FileReader_getClass,
   .toString = FileReader_toString,
   .instanceOf = FileReader_instanceOf,
@@ -61,8 +62,23 @@ Reader FileReaderProto = {
 };
 
 
-FileReader *FileReader_new() {
+FileReader *FileReader_new_u(UFILE *f) {
   _super_Reader_new(FileReader, obj);
-  
+  obj->_file = f;
+  obj->_close = 0;
+  return obj;
+}
+
+FileReader *FileReader_new_f(FILE *f) {
+  _super_Reader_new(FileReader, obj);
+  obj->_file = u_finit(f, NULL, NULL);
+  obj->_close = 0;
+  return obj;
+}
+
+FileReader *FileReader_new_s(const char *f) {
+  _super_Reader_new(FileReader, obj);
+  obj->_file = u_fopen(f, "r", NULL, NULL);
+  obj->_close = 1;
   return obj;
 }

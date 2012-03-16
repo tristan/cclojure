@@ -15,12 +15,8 @@ int main(int argc, char *argv[]) {
   }
 
   UFILE *f = u_fopen(argv[1], "r", NULL, NULL);
-  FileReader *fr = FileReader_new();
-  fr->init(fr, f);
-  LineNumberReader *lnr = LineNumberReader_new();
-  lnr->init(lnr, fr);
-
-  //  Object *res = NULL;
+  FileReader *fr = FileReader_new_u(f);
+  LineNumberReader *lnr = LineNumberReader_new((Reader*)fr);
 
   UChar *str = lnr->toString(lnr);
   u_printf("%S\n", str);

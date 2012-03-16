@@ -7,15 +7,6 @@
 #define _d(N) *(mpf_t*)((Decimal*)N)->_num
 #define _r(N) *(mpq_t*)((Ratio*)N)->_num
 
-int Decimal_init(void *self, void *num) {
-  mpf_t* dt = malloc(sizeof(mpf_t));
-  mpf_init(*dt);
-  mpf_set_d(*dt, *(double*)num);
-
-  ((Decimal*)self)->_num = dt;
-  return 1;
-}
-
 void Decimal_destroy(void *self) {
   if (((Decimal*)self)->_num != NULL) {
     mpf_clear(((Decimal*)self)->_num);
@@ -87,7 +78,6 @@ int Decimal_equals(void *self, void* obj) {
 }
 
 Number DecimalProto = {
-  .init = Decimal_init,
   .destroy = Decimal_destroy,
   .getClass = Decimal_getClass,
   .toString = Decimal_toString,
@@ -95,8 +85,13 @@ Number DecimalProto = {
   .equals = Decimal_equals
 };
 
-Decimal *Decimal_new() {
+Decimal *Decimal_new(double num) {
   _super_Number_new(Decimal, obj);
+  mpf_t* dt = malloc(sizeof(mpf_t));
+  mpf_init(*dt);
+  mpf_set_d(*dt, num);
+
+  obj->_num = dt;
   return obj;
 }
 

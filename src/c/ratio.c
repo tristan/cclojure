@@ -8,22 +8,6 @@
 #define _d(N) *(mpf_t*)((Decimal*)N)->_num
 #define _r(N) *(mpq_t*)((Ratio*)N)->_num
 
-int Ratio_init(void *self, void *numden) {
-
-  // TODO: are these copies now? do i have to clear them?
-  // does this even work?! time to write some tests!
-  mpz_t *num = _ip(numden);
-  mpz_t *den = _ip((numden+1));
-
-  mpq_t* rt = malloc(sizeof(mpq_t));
-  mpq_init(*rt);
-  mpq_set_num(*rt, *num);
-  mpq_set_den(*rt, *den);
-
-  ((Ratio*)self)->_num = rt;
-  return 1;
-}
-
 void Ratio_destroy(void *self) {
   if (((Ratio*)self)->_num != NULL) {
     mpq_clear(((Ratio*)self)->_num);
@@ -83,7 +67,6 @@ int Ratio_equals(void *self, void* obj) {
 }
 
 Number RatioProto = {
-  .init = Ratio_init,
   .destroy = Ratio_destroy,
   .getClass = Ratio_getClass,
   .toString = Ratio_toString,
@@ -91,8 +74,26 @@ Number RatioProto = {
   .equals = Ratio_equals
 };
 
-Ratio *Ratio_new() {
+Ratio *Ratio_new_i(int numerator, int denominator) {
   _super_Number_new(Ratio, obj);
+
+  mpq_t* rt = malloc(sizeof(mpq_t));
+  mpq_init(*rt);
+  mpq_set_si(*rt, numerator, denominator);
+
+  obj->_num = rt;
+  return obj;
+}
+
+Ratio *Ratio_new_I(Integer* numerator, Integer* denominator) {
+  _super_Number_new(Ratio, obj);
+
+  mpq_t* rt = malloc(sizeof(mpq_t));
+  mpq_init(*rt);
+  mpq_set_num(*rt, _i(numerator));
+  mpq_set_den(*rt, _i(denominator));
+
+  obj->_num = rt;
   return obj;
 }
 

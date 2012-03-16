@@ -17,6 +17,7 @@ struct Ratio {
 
 typedef struct Ratio Ratio;
 
-Ratio *Ratio_new();
+Ratio *Ratio_new_I(Integer* numerator, Integer* denominator);
+Ratio *Ratio_new_i(int numerator, int denominator);
 
 #endif

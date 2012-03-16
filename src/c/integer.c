@@ -7,15 +7,6 @@
 #define _d(N) *(mpf_t*)((Decimal*)N)->_num
 #define _r(N) *(mpq_t*)((Ratio*)N)->_num
 
-int Integer_init(void *self, void *num) {
-  mpz_t* it = malloc(sizeof(mpz_t));
-  mpz_init(*it);
-  mpz_set_si(*it, *(int*)num);
-
-  ((Integer*)self)->_num = it;
-  return 1;
-}
-
 void Integer_destroy(void *self) {
   if (((Integer*)self)->_num != NULL) {
     mpz_clear(((Integer*)self)->_num);
@@ -77,7 +68,6 @@ int Integer_equals(void *self, void* obj) {
 }
 
 Number IntegerProto = {
-  .init = Integer_init,
   .destroy = Integer_destroy,
   .getClass = Integer_getClass,
   .toString = Integer_toString,
@@ -85,8 +75,13 @@ Number IntegerProto = {
   .equals = Integer_equals
 };
 
-Integer *Integer_new() {
+Integer *Integer_new(int num) {
   _super_Number_new(Integer, obj);
+  mpz_t* it = malloc(sizeof(mpz_t));
+  mpz_init(*it);
+  mpz_set_si(*it, num);
+
+  obj->_num = it;
   return obj;
 }
 

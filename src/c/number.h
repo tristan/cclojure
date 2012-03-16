@@ -18,7 +18,6 @@ int Number_getClass(void *reader);
 int Number_instanceOf(void *reader, int class);
 
 #define _super_Number_new(T, O) \
-  if (!T##Proto.init) return NULL; \
   if (!T##Proto.destroy) T##Proto.destroy = Object_destroy; \
   if (!T##Proto.toString) T##Proto.toString = Number_toString; \
   if (!T##Proto.getClass) T##Proto.getClass = Number_getClass; \

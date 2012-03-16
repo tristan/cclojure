@@ -14,7 +14,7 @@ struct Integer {
 
 typedef struct Integer Integer;
 
-Integer *Integer_new();
+Integer *Integer_new(int num);
 Integer *Integer_valueOf(const UChar *s, int radix);
 
 #endif
