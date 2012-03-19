@@ -31,7 +31,9 @@ int Reader_instanceOf(void *reader, int class);
   if (!T##Proto.getClass) T##Proto.getClass = Reader_getClass; \
   if (!T##Proto.instanceOf) T##Proto.instanceOf = Reader_instanceOf; \
   if (!T##Proto.equals) T##Proto.equals = Object_equals; \
+  if (!T##Proto.clone) T##Proto.clone = Object_clone; \
   T *O = calloc(1, sizeof(T)); \
-  *((Reader*)O) = T##Proto
+  *((Reader*)O) = T##Proto; \
+  O->__refcount = 1
 
 #endif

@@ -27,3 +27,8 @@ int Object_equals(void *self, void *obj) {
   // this should never be called, but if it does, return false
   return 0;
 }
+
+void *Object_clone(void *self) {
+  puts("clone not supported");
+  return NULL;
+}

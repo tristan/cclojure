@@ -27,7 +27,9 @@ void *Number_negate(void *self);
   if (!T##Proto.instanceOf) T##Proto.instanceOf = Number_instanceOf; \
   if (!T##Proto.equals) T##Proto.equals = Object_equals; \
   if (!T##Proto.negate) T##Proto.negate = Number_negate; \
+  if (!T##Proto.clone) T##Proto.clone = Object_clone; \
   T *O = calloc(1, sizeof(T)); \
-  *((Number*)O) = T##Proto
+  *((Number*)O) = T##Proto; \
+  O->__refcount = 1
 
 #endif

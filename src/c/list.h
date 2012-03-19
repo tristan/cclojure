@@ -47,7 +47,9 @@ int List_isEmpty(void *self);
   if (!T##Proto.contains) T##Proto.contains = List_contains; \
   if (!T##Proto.indexOf) T##Proto.indexOf = List_indexOf; \
   if (!T##Proto.remove_object) T##Proto.remove_object = List_remove_object; \
+  if (!T##Proto.clone) T##Proto.clone = Object_clone; \
   T *O = calloc(1, sizeof(T)); \
-  *((List*)O) = T##Proto
+  *((List*)O) = T##Proto; \
+  O->__refcount = 1
 
 #endif

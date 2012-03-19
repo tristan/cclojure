@@ -42,6 +42,7 @@ int ArrayList_add_at(void *self, int index, Object *e) {
       ((ArrayList*)self)->_obj[i] = ((ArrayList*)self)->_obj[i-1]; 
     }
   }
+  add_ref(e);
   ((ArrayList*)self)->_obj[index] = e;
   ((ArrayList*)self)->_size += 1;
   return 1;
@@ -55,7 +56,7 @@ void ArrayList_clear(void *self) {
   int size = ((ArrayList*)self)->_size;
   for (int i = 0; i < size; i++) {
     Object *o = ((ArrayList*)self)->_obj[i];
-    o->destroy(o);
+    drop_ref(o);
     ((ArrayList*)self)->_obj[i] = 0;
   }
   ((ArrayList*)self)->_size = 0;
@@ -65,6 +66,7 @@ Object *ArrayList_get(void *self, int index) {
   if (index >= ((ArrayList*)self)->_size) {
     return NULL;
   }
+  add_ref(((ArrayList*)self)->_obj[index]);
   return ((ArrayList*)self)->_obj[index];
 }
 
@@ -91,6 +93,7 @@ Object *ArrayList_set(void *self, int index, Object *element) {
   }
   Object *r = ((ArrayList*)self)->_obj[index];
   ((ArrayList*)self)->_obj[index] = element;
+  add_ref(element);
   return r;
 }
 
@@ -98,9 +101,21 @@ int ArrayList_size(void *self) {
   return ((ArrayList*)self)->_size;
 }
 
+void ArrayList_destroy(void *self) {
+  int size = ((List*)self)->size(self);
+  for (int i = 0; i < size; i++) {
+    Object *o = ((List*)self)->get(self, i);
+    drop_ref(o);
+  }
+  free(((ArrayList*)self)->_obj);
+  free(self);
+}
+
+
 List ArrayListProto = {
   .getClass = ArrayList_getClass,
   .instanceOf = ArrayList_instanceOf,
+  .destroy = ArrayList_destroy,
 
   .add = ArrayList_add,
   .add_at = ArrayList_add_at,

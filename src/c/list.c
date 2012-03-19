@@ -3,9 +3,9 @@
 
 UChar *List_toString(void *self) {
   StringBuffer *sb = StringBuffer_new();
-  UChar header[] = { '#', '<', 'L', 'i', 's', 't', ' ', '[', 0 };
-  UChar sep[] = { ',', ' ', 0 };
-  UChar tail[] = { ']', '>', 0 };
+  const UChar header[] = { '#', '<', 'L', 'i', 's', 't', ' ', '[', 0 };
+  const UChar sep[] = { ',', ' ', 0 };
+  const UChar tail[] = { ']', '>', 0 };
   StringBuffer_append_string(sb, header);
   int size = ((List*)self)->size(self);
   for (int i = 0; i < size; i++) {
@@ -68,7 +68,7 @@ int List_remove_object(void *self, Object *o) {
     return 0;
   }
   Object *obj = ((List*)self)->remove(self, idx);
-  obj->destroy(obj);
+  drop_ref(obj);
   return 1;
 }
 
@@ -94,7 +94,7 @@ void List_destroy(void *self) {
   int size = ((List*)self)->size(self);
   for (int i = 0; i < size; i++) {
     Object *o = ((List*)self)->get(self, i);
-    o->destroy(o);
+    drop_ref(o);
   }
   free(self);
 }

@@ -3,7 +3,8 @@ CFLAGS=-Wall -g -std=c99 -licuuc -licudata -licui18n -licuio -lgmp
 LISTS=src/c/list.o src/c/arraylist.o
 NUMBERS=src/c/number.o src/c/integer.o src/c/decimal.o src/c/ratio.o
 READERS=src/c/reader.o src/c/file_reader.o src/c/line_number_reader.o
-OBJECTS=src/c/object.o src/c/string.o ${NUMBERS} ${READERS} ${LISTS}
+REGEX=src/c/pattern.o src/c/matcher.o
+OBJECTS=src/c/object.o src/c/string.o ${NUMBERS} ${READERS} ${LISTS} ${REGEX}
 
 src/c/main: ${OBJECTS} src/c/lisp_reader.o src/c/string_buffer.o src/c/unicode_utils.o src/c/regex_icu.o
 

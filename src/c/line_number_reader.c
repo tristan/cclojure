@@ -55,10 +55,16 @@ int LineNumberReader_getLineNumber(void *self) {
   return ((LineNumberReader*)self)->_linenum;
 }
 
+void LineNumberReader_destroy(void *self) {
+  drop_ref(((LineNumberReader*)self)->reader);
+  free(self);
+}
+
 Reader LineNumberReaderProto = {
   .getClass = LineNumberReader_getClass,
   .toString = LineNumberReader_toString,
   .instanceOf = LineNumberReader_instanceOf,
+  .destroy = LineNumberReader_destroy,
 
   .read = LineNumberReader_read,
   .unread = LineNumberReader_unread,
@@ -71,6 +77,7 @@ LineNumberReader *LineNumberReader_new(Reader *reader) {
   obj->getLineNumber = LineNumberReader_getLineNumber;
 
   obj->reader = (Reader*)reader;
+  add_ref(reader);
   obj->_linenum = 0;
   return obj;
 }

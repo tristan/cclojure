@@ -31,11 +31,13 @@ int main(int argc, char *argv[]) {
   free(s);
   // list->destroy(list)
 
-  o->destroy(o);
+  drop_ref(o);
 
-  lnr->destroy(lnr);
-  fr->destroy(fr);
+  drop_ref(lnr);
+  drop_ref(fr);
   u_fclose(f);
+
+  LispReader_shutdown();
 
   return 0;
 }
