@@ -27,17 +27,14 @@ int Object_getClass(void *self);
 int Object_instanceOf(void *self, int class);
 int Object_equals(void *self, void *obj);
 
-// call this to get a new id to store the value of a class type
-int register_new_class();
-
-//Object *Object_new(size_t size, Object proto, ...) {
+// TODO: calloc success check
 #define _super_Object_new(T, O) \
   if (!T##Proto.destroy) T##Proto.destroy = Object_destroy; \
   if (!T##Proto.toString) T##Proto.toString = Object_toString; \
   if (!T##Proto.getClass) T##Proto.getClass = Object_getClass; \
   if (!T##Proto.instanceOf) T##Proto.instanceOf = Object_instanceOf; \
   if (!T##Proto.equals) T##Proto.equals = Object_equals; \
-  T *O = calloc(1, sizeof(T));                          \
+  T *O = calloc(1, sizeof(T)); \
   *((Object*)O) = T##Proto
 //}
 

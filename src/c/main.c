@@ -6,6 +6,7 @@
 #include "line_number_reader.h"
 #include "unicode_utils.h"
 #include "lisp_reader.h"
+#include "arraylist.h"
 
 int main(int argc, char *argv[]) {
 
@@ -19,9 +20,17 @@ int main(int argc, char *argv[]) {
   LineNumberReader *lnr = LineNumberReader_new((Reader*)fr);
 
   Object *o = parse_lisp((Reader*)lnr, 1, NULL, 1);
-  UChar *s = o->toString(o);
+
+  ArrayList *list = ArrayList_new(8);
+  list->add(list, (Object*)fr);
+  list->add(list, (Object*)lnr);
+  list->add(list, (Object*)o);
+
+  UChar *s = list->toString(list);
   u_printf("%S\n", s);
   free(s);
+  // list->destroy(list)
+
   o->destroy(o);
 
   lnr->destroy(lnr);
