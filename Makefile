@@ -1,14 +1,15 @@
 CFLAGS=-Wall -g -std=c99 -licuuc -licudata -licui18n -licuio -lgmp
 
+SEQS=src/c/seq.o src/c/cons.o src/c/empty_seq.o
 LISTS=src/c/list.o src/c/arraylist.o
 NUMBERS=src/c/number.o src/c/integer.o src/c/decimal.o src/c/ratio.o
 READERS=src/c/reader.o src/c/file_reader.o src/c/line_number_reader.o
 REGEX=src/c/pattern.o src/c/matcher.o
-OBJECTS=src/c/object.o src/c/string.o ${NUMBERS} ${READERS} ${LISTS} ${REGEX}
+OBJECTS=src/c/object.o src/c/string.o ${NUMBERS} ${READERS} ${LISTS} ${REGEX} ${SEQS}
 
-src/c/main: ${OBJECTS} src/c/lisp_reader.o src/c/string_buffer.o src/c/unicode_utils.o src/c/regex_icu.o
+src/c/main: ${OBJECTS} src/c/lisp_reader.o src/c/string_buffer.o src/c/unicode_utils.o
 
-src/c/whiteboard: src/c/object.o src/c/string.o
+src/c/whiteboard: src/c/object.o src/c/string.o src/c/string_buffer.o ${REGEX}
 
 cclj: src/c/main
 	mkdir -p bin

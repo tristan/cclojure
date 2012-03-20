@@ -14,15 +14,15 @@ void Integer_destroy(void *self) {
   free(self);
 }
 
-int Integer_instanceOf(void *self, int class) {
+int Integer_instanceOf(const void *self, int class) {
   return class == INTEGER_CLASS || Number_instanceOf(self, class);
 }
 
-int Integer_getClass(void *self) {
+int Integer_getClass(const void *self) {
   return INTEGER_CLASS;
 }
 
-UChar *Integer_toString(void *self) {
+UChar *Integer_toString(const void *self) {
   char *astr = mpz_get_str(NULL, 10, _i(self));
   if (astr) {
     UChar *ustr = malloc(sizeof(UChar) * strlen(astr));
@@ -33,7 +33,7 @@ UChar *Integer_toString(void *self) {
   return NULL;
 }
 
-int Integer_equals(void *self, void* obj) {
+int Integer_equals(const void *self, const void* obj) {
 #ifdef _DEBUG
   if (((Object*)self)->getClass(self) != Integer_getClass(self)) {
     puts("calling Integer_equals on non integer object is strange!");
@@ -100,7 +100,7 @@ Integer *Integer_new(int num) {
   return obj;
 }
 
-Integer *Integer_valueOf(const UChar *s, int radix) {
+Integer *Integer_valueOf_u(const UChar *s, int radix) {
   _super_Number_new(Integer, obj);
   char *astr = malloc(u_strlen(s)+1);
   u_austrcpy(astr, s);
@@ -115,4 +115,11 @@ Integer *Integer_valueOf(const UChar *s, int radix) {
   free(astr);
   obj->_num = it;
   return obj;
+}
+
+Integer *Integer_valueOf_s(const String *s, int radix) {
+  UChar *u = s->toString(s);
+  Integer *i = Integer_valueOf_u(u, radix);
+  free(u);
+  return i;
 }

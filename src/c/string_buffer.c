@@ -7,30 +7,11 @@
 
 StringBuffer *StringBuffer_new() {
   StringBuffer *buf = malloc(sizeof(StringBuffer));
-  buf->string = malloc(DEFAULT_STRING_BUFFER_CAPACITY * sizeof(UChar));
+  buf->string = calloc(DEFAULT_STRING_BUFFER_CAPACITY, sizeof(UChar));
   buf->max_len = DEFAULT_STRING_BUFFER_CAPACITY;
   buf->len = 0;
   return buf;
 }
-
-/*
-StringBuffer *StringBuffer_new(const char *str) {
-  StringBuffer *buf = malloc(sizeof(StringBuffer));
-  buf->len = strlen(str);
-  buf->max_len = buf->len + DEFAULT_STRING_BUFFER_CAPACITY;
-  buf->string = malloc(buf->max_len);
-  strcpy(buf->string, str);
-  return buf;
-}
-
-StringBuffer *StringBuffer_new(int capacity) {
-  StringBuffer *buf = malloc(sizeof(StringBuffer));
-  buf->string = malloc(capacity);
-  buf->max_len = capacity;
-  buf->len = 0;
-  return buf;
-}
-*/
 
 void StringBuffer_destroy(StringBuffer *self) {
   if (self->string) free(self->string);
@@ -43,7 +24,7 @@ void resize_if_needed(StringBuffer *self, int extra) {
     self->max_len = newlen + DEFAULT_STRING_BUFFER_CAPACITY;
     UChar *tmp = realloc(self->string, self->max_len * sizeof(UChar));
     if (!tmp) {
-      puts("ERROR: Unable to allocate required memory");
+      puts("ERROR: Unable to allocate required memory in string_buffer:resize_if_needed");
       exit(1);
     } else {
       self->string = tmp;

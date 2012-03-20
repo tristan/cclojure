@@ -4,6 +4,7 @@
 #include <unicode/ustdio.h>
 #include <unicode/uchar.h>
 
+#include "empty_seq.h"
 #include "numbers.h"
 #include "regex.h"
 #include "string.h"
@@ -11,15 +12,16 @@
 #include "lisp_reader.h"
 #include "line_number_reader.h"
 #include "unicode_utils.h"
-//#include "RT.h"
+#include "arraylist.h"
 
-static regex_t *int_regex = NULL;
-static regex_t *float_regex = NULL;
-static regex_t *ratio_regex = NULL;
+static Pattern *int_regex = NULL;
+static Pattern *float_regex = NULL;
+static Pattern *ratio_regex = NULL;
 
-U_STRING_DECL(int_pat, "([-+]?)(?:(0)|([1-9][0-9]*)|0[xX]([0-9A-Fa-f]+)|0([0-7]+)|([1-9][0-9]?)[rR]([0-9A-Za-z]+)|0[0-9]+)", 99);
-U_STRING_DECL(fl_pat, "([-+]?[0-9]+(\\.[0-9]*)?([eE][-+]?[0-9]+)?)(M)?", 47);
-U_STRING_DECL(ra_pat, "([-+]?[0-9]+)/([0-9]+)", 23);
+const char int_patt[] = 
+  "([-+]?)(?:(0)|([1-9][0-9]*)|0[xX]([0-9A-Fa-f]+)|0([0-7]+)|([1-9][0-9]?)[rR]([0-9A-Za-z]+)|0[0-9]+)";
+const char *float_patt = "([-+]?[0-9]+(\\.[0-9]*)?([eE][-+]?[0-9]+)?)(M)?";
+const char *ratio_patt = "([-+]?[0-9]+)/([0-9]+)";
 
 typedef Object*(*macro_fn)(Reader *r, UChar ch);
 static macro_fn macros[256];
@@ -33,18 +35,15 @@ static Object *read_list(Reader *r, UChar ch);
 static int initialised = 0;
 static void init() {
   if (int_regex == NULL) {
-    U_STRING_INIT(int_pat, "([-+]?)(?:(0)|([1-9][0-9]*)|0[xX]([0-9A-Fa-f]+)|0([0-7]+)|([1-9][0-9]?)[rR]([0-9A-Za-z]+)|0[0-9]+)", 99);
-    int_regex = re_compile(int_pat);
+    int_regex = Pattern_compile_a(int_patt, 0);
   }
 
   if (float_regex == NULL) {
-    U_STRING_INIT(fl_pat, "([-+]?[0-9]+(\\.[0-9]*)?([eE][-+]?[0-9]+)?)(M)?", 47);
-    float_regex = re_compile(fl_pat);
+    float_regex = Pattern_compile_a(float_patt, 0);
   }
 
   if (ratio_regex == NULL) {
-    U_STRING_INIT(ra_pat, "([-+]?[0-9]+)/([0-9]+)", 23);
-    ratio_regex = re_compile(ra_pat);
+    ratio_regex = Pattern_compile_a(ratio_patt, 0);
   }
 
   macros['"'] = read_string;
@@ -66,9 +65,9 @@ static void init() {
 }
 
 void LispReader_shutdown() {
-  regex_destroy(int_regex);
-  regex_destroy(float_regex);
-  regex_destroy(ratio_regex);
+  drop_ref(int_regex);
+  drop_ref(float_regex);
+  drop_ref(ratio_regex);
 }
 
 static int iswhitespace(UChar ch) {
@@ -88,73 +87,77 @@ static Object *invoke_macro(Reader *r, UChar ch) {
 
 static Number *match_number(const UChar* s) {
 
-  regmatch_t *match = re_match(int_regex, s);
-  if (match) {
-    UChar *n = NULL;
-    n = re_group(match, 2);
+  Matcher *match = int_regex->matcher_u(int_regex, s);
+  if (match->matches(match)) {
+    String *n = NULL;
+    n = match->group(match, 2);
     if (n != NULL) {
       Number *num = (Number*)Integer_new(0);
-      regmatch_destroy(match);
-      free(n);
+      drop_ref(match);
+      drop_ref(n);
       return num;
     }
     int negate = 0;
-    n = re_group(match, 1);
+    n = match->group(match, 1);
     if (n != NULL) {
-      if (n[0] == '-')
+      if (n->charAt(n, 0) == '-')
         negate = 1;
-      free(n);
+      drop_ref(n);
     }
     int radix = 10;
-    if ((n = re_group(match, 3)) != NULL) {
+    if ((n = match->group(match, 3)) != NULL) {
       radix = 10;
-    } else if ((n = re_group(match, 4)) != NULL) {
+    } else if ((n = match->group(match, 4)) != NULL) {
       radix = 16;
-    } else if ((n = re_group(match, 5)) != NULL) {
+    } else if ((n = match->group(match, 5)) != NULL) {
       radix = 8;
-    } else if ((n = re_group(match, 7)) != NULL) {
-      UChar *tmp = re_group(match, 6);
+    } else if ((n = match->group(match, 7)) != NULL) {
+      String *ts = match->group(match, 6);
+      UChar *tmp = ts->toString(ts);
       radix = u_utoi(tmp);
       free(tmp);
+      drop_ref(ts);
     }
     if (n == NULL) {
       return NULL;
     } else {
-      Number *num = (Number*)Integer_valueOf(n, radix);
+      Number *num = (Number*)Integer_valueOf_s(n, radix);
       if (negate) {
         num->negate(num);
       }
-      free(n);
-      regmatch_destroy(match);
+      drop_ref(n);
+      drop_ref(match);
       return num;
     }
   }
 
-  match = re_match(float_regex, s);
-  if (match) {
-    UChar *n = NULL;
+  match = float_regex->matcher_u(float_regex, s);
+  if (match->matches(match)) {
+    String *n = NULL;
     Number *num = NULL;
-    if ((n = re_group(match, 4)) != NULL) {
-      num = (Number*)Decimal_valueOf(n);
-      free(n);
+    if ((n = match->group(match, 4)) != NULL) {
+      UChar *t = n->toString(n);
+      num = (Number*)Decimal_valueOf(t);
+      free(t);
+      drop_ref(n);
     } else {
       num = (Number*)Decimal_valueOf(s);
     }
-    regmatch_destroy(match);
+    drop_ref(match);
     return num;
   }
 
-  match = re_match(ratio_regex, s);
-  if (match) {
-    UChar *snum, *sden;
-    snum = re_group(match, 1);
-    sden = re_group(match, 2);
+  match = ratio_regex->matcher_u(ratio_regex, s);
+  if (match->matches(match)) {
+    String *snum, *sden;
+    snum = match->group(match, 1);
+    sden = match->group(match, 2);
     Number *rat = (Number*)Ratio_new_s(snum, sden);
     
-    free(snum);
-    free(sden);
+    drop_ref(snum);
+    drop_ref(sden);
 
-    regmatch_destroy(match);
+    drop_ref(match);
     return rat;
   }
   return NULL;
@@ -327,14 +330,14 @@ static Object *read_meta(Reader *r, UChar ch) {
   return NULL;
 }
 
-Object *read_delimited_list(UChar delim, Reader *r, int is_recursive) {
-  // List *a = (List*)ArrayList_new();
+List *read_delimited_list(UChar delim, Reader *r, int is_recursive) {
+  List *a = (List*)ArrayList_new(32);
   UChar ch;
   for (;;) {
     while (iswhitespace(ch = r->read(r))) ;
 
     if (ch == U_EOF) {
-      puts("EOF while reading");
+      puts("EOF while reading list");
       return NULL;
     }
 
@@ -345,19 +348,18 @@ Object *read_delimited_list(UChar delim, Reader *r, int is_recursive) {
     if (ismacro(ch)) {
       Object *o = invoke_macro(r, ch);
       if (o != NULL) {
-        // a->add(a, o)
+        a->add(a, o);
       }
     } else {
       r->unread(r, ch);
       Object *o = parse_lisp(r, 1, NULL, is_recursive);
       if (o != (Object*)r) {
-        // a->add(a, o);
+        a->add(a, o);
       }
     }
   }
 
-  return // a;
-    NULL;
+  return a;
 }
 
 static Object *read_list(Reader *r, UChar leftparen) {
@@ -365,13 +367,12 @@ static Object *read_list(Reader *r, UChar leftparen) {
   if (r->instanceOf(r, LINENUMBERREADER_CLASS)) {
     line = ((LineNumberReader*)r)->getLineNumber(r);
   }
-  //List *list = 
-  Object *list = read_delimited_list(')', r, 1);
-  // if (list->isEmpty(list)) return PersistentList.EMPTY;
+  List *list = read_delimited_list(')', r, 1);
+  if (list->isEmpty(list)) return (Object*)EmptySeq_new();
   if (line != -1) {
-    return list; // WITH META
+    return (Object*)list; // WITH META
   } else {
-    return list;
+    return (Object*)list;
   }
 }
 
@@ -391,10 +392,9 @@ Object *parse_lisp(Reader *r, int eof_is_error, Object *eof_value, int is_recurs
   UChar ch;
   for (;;) {
     while (iswhitespace(ch = r->read(r))) ;
-
     if (ch == U_EOF) {
       if (eof_is_error) {
-        puts("EOF");
+        puts("EOF in parse_lisp");
         return NULL;
       } else {
         return eof_value;

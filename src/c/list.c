@@ -1,7 +1,7 @@
 #include "string_buffer.h"
 #include "list.h"
 
-UChar *List_toString(void *self) {
+UChar *List_toString(const void *self) {
   StringBuffer *sb = StringBuffer_new();
   const UChar header[] = { '#', '<', 'L', 'i', 's', 't', ' ', '[', 0 };
   const UChar sep[] = { ',', ' ', 0 };
@@ -19,6 +19,7 @@ UChar *List_toString(void *self) {
       StringBuffer_append_string(sb, sep);
     }
     free(s);
+    drop_ref(o);
   }
   StringBuffer_append_string(sb, tail);
   UChar *str = StringBuffer_toString(sb);
@@ -26,15 +27,15 @@ UChar *List_toString(void *self) {
   return str;
 }
 
-int List_getClass(void *self) {
+int List_getClass(const void *self) {
   return LIST_CLASS;
 }
 
-int List_instanceOf(void *self, int class) {
+int List_instanceOf(const void *self, int class) {
   return class == LIST_CLASS || Object_instanceOf(self, class);
 }
 
-int List_equals(void *self, void *list) {
+int List_equals(const void *self, const void *list) {
   if (!((Object*)list)->instanceOf(list, LIST_CLASS)) {
     return 0;
   }
@@ -52,7 +53,7 @@ int List_equals(void *self, void *list) {
   return 1;
 }
 
-int List_indexOf(void *self, Object *o) {
+int List_indexOf(const void *self, const Object *o) {
   int size = ((List*)self)->size(self);
   for (int i = 0; i < size; i++) {
     if (o->equals(o, ((List*)self)->get(self, i))) {
@@ -62,7 +63,7 @@ int List_indexOf(void *self, Object *o) {
   return -1;
 }
 
-int List_remove_object(void *self, Object *o) {
+int List_remove_object(void *self, const Object *o) {
   int idx = ((List*)self)->indexOf(self, o);
   if (idx < 0) {
     return 0;
@@ -72,15 +73,15 @@ int List_remove_object(void *self, Object *o) {
   return 1;
 }
 
-int List_contains(void *self, Object *o) {
+int List_contains(const void *self, const Object *o) {
   return ((List*)self)->indexOf(self, o) >= 0;
 }
 
-int List_isEmpty(void *self) {
+int List_isEmpty(const void *self) {
   return ((List*)self)->size(self) == 0;
 }
 
-Object **List_toArray(void *self) {
+Object **List_toArray(const void *self) {
   int size = ((List*)self)->size(self);
   Object **rval = calloc(size, sizeof(Object*));
   for (int i = 0; i < size; i++) {
@@ -94,7 +95,7 @@ void List_destroy(void *self) {
   int size = ((List*)self)->size(self);
   for (int i = 0; i < size; i++) {
     Object *o = ((List*)self)->get(self, i);
-    drop_ref(o);
+    drop_ref(o); drop_ref(o); // double drop, as get should do an add_ref
   }
   free(self);
 }

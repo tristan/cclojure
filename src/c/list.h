@@ -9,15 +9,15 @@
   int (*add)(void *self, Object *e); \
   int (*add_at)(void *self, int index, Object *e);  \
   void (*clear)(void *self); \
-  int (*contains)(void *self, Object *o); \
-  Object *(*get)(void *self, int index); \
-  int (*indexOf)(void *self, Object *o); \
-  int (*isEmpty)(void *self); \
+  int (*contains)(const void *self, const Object *o); \
+  Object *(*get)(const void *self, int index); \
+  int (*indexOf)(const void *self, const Object *o); \
+  int (*isEmpty)(const void *self); \
   Object *(*remove)(void *self, int index); \
-  int (*remove_object)(void *self, Object *o); \
+  int (*remove_object)(void *self, const Object *o); \
   Object *(*set)(void *self, int index, Object *element); \
-  int (*size)(void *self); \
-  Object **(*toArray)(void *self)
+  int (*size)(const void *self); \
+  Object **(*toArray)(const void *self)
 
 struct List {
   _extend_List;
@@ -25,16 +25,16 @@ struct List {
 
 typedef struct List List;
 
-UChar *List_toString(void *self);
-int List_getClass(void *self);
-int List_instanceOf(void *self, int class);
+UChar *List_toString(const void *self);
+int List_getClass(const void *self);
+int List_instanceOf(const void *self, int class);
 void List_destroy(void *self);
-int List_equals(void *self, void *list);
-Object **List_toArray(void *self);
-int List_indexOf(void *self, Object *o);
-int List_remove_object(void *self, Object *o);
-int List_contains(void *self, Object *o);
-int List_isEmpty(void *self);
+int List_equals(const void *self, const void *list);
+Object **List_toArray(const void *self);
+int List_indexOf(const void *self, const Object *o);
+int List_remove_object(void *self, const Object *o);
+int List_contains(const void *self, const Object *o);
+int List_isEmpty(const void *self);
 
 #define _super_List_new(T, O) \
   if (!T##Proto.destroy) T##Proto.destroy = List_destroy; \

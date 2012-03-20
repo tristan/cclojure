@@ -9,11 +9,11 @@
 
 #define _extend_Object \
   void (*destroy)(void *self); \
-  UChar *(*toString)(void *self); \
-  int (*getClass)(void *self); \
-  int (*instanceOf)(void *self, int class); \
-  int (*equals)(void *self, void *obj); \
-  void *(*clone)(void *self); \
+  UChar *(*toString)(const void *self); \
+  int (*getClass)(const void *self); \
+  int (*instanceOf)(const void *self, int class); \
+  int (*equals)(const void *self, const void *obj); \
+  void *(*clone)(const void *self); \
   int __refcount
 
 struct Object;
@@ -24,11 +24,11 @@ struct Object {
 };
 
 void Object_destroy(void *self);
-UChar *Object_toString(void *self);
-int Object_getClass(void *self);
-int Object_instanceOf(void *self, int class);
-int Object_equals(void *self, void *obj);
-void *Object_clone(void *self);
+UChar *Object_toString(const void *self);
+int Object_getClass(const void *self);
+int Object_instanceOf(const void *self, int class);
+int Object_equals(const void *self, const void *obj);
+void *Object_clone(const void *self);
 
 // TODO: calloc success check
 #define _super_Object_new(T, O) \
@@ -44,6 +44,6 @@ void *Object_clone(void *self);
 //}
 
 #define add_ref(O) (O)->__refcount++
-#define drop_ref(O) if (!(--((O)->__refcount))) (O)->destroy((O))
+#define drop_ref(O) if ((O) != NULL && !(--((O)->__refcount))) (O)->destroy((O))
 
 #endif

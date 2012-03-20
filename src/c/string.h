@@ -6,6 +6,8 @@
 
 #define _extend_String \
   _extend_Object; \
+  UChar (*charAt)(const void *self, int index); \
+  int (*length)(const void *self); \
   UChar *_str
 
 struct String {

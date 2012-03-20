@@ -2,6 +2,7 @@
 #define _integer_h
 
 #include <unicode/ustdio.h>
+#include "string.h"
 #include "number.h"
 
 #define _extend_Integer \
@@ -15,6 +16,7 @@ struct Integer {
 typedef struct Integer Integer;
 
 Integer *Integer_new(int num);
-Integer *Integer_valueOf(const UChar *s, int radix);
+Integer *Integer_valueOf_u(const UChar *s, int radix);
+Integer *Integer_valueOf_s(const String *s, int radix);
 
 #endif

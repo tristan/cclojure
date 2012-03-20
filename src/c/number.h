@@ -14,9 +14,9 @@ struct Number {
 
 typedef struct Number Number;
 
-UChar *Number_toString(void *reader);
-int Number_getClass(void *reader);
-int Number_instanceOf(void *reader, int class);
+UChar *Number_toString(const void *self);
+int Number_getClass(const void *self);
+int Number_instanceOf(const void *self, int class);
 
 void *Number_negate(void *self);
 

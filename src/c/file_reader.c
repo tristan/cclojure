@@ -28,15 +28,15 @@ long FileReader_skip(void *self, long n) {
   }
 }
 
-int FileReader_instanceOf(void *self, int class) {
+int FileReader_instanceOf(const void *self, int class) {
   return class == FILEREADER_CLASS || Reader_instanceOf(self, class);
 }
 
-int FileReader_getClass(void *self) {
+int FileReader_getClass(const void *self) {
   return FILEREADER_CLASS;
 }
 
-UChar *FileReader_toString(void *self) {
+UChar *FileReader_toString(const void *self) {
   UChar *str = malloc(sizeof(UChar) * 20); // address should be 8 chars
   u_sprintf(str, "FileReader@%x", self);
   return str;

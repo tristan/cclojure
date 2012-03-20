@@ -1,11 +1,13 @@
+#include <stdio.h>
 #include <string.h>
 #include "arraylist.h"
+#include "unicode_utils.h"
 
-int ArrayList_getClass(void *self) {
+int ArrayList_getClass(const void *self) {
   return ARRAYLIST_CLASS;
 }
 
-int ArrayList_instanceOf(void *self, int class) {
+int ArrayList_instanceOf(const void *self, int class) {
   return class == ARRAYLIST_CLASS || List_instanceOf(self, class);
 }
 
@@ -31,7 +33,11 @@ static int resize_internal(void *self, int size) {
 
 int ArrayList_add_at(void *self, int index, Object *e) {
   if (index < 0 || index > ((ArrayList*)self)->_size) {
-    printf("invalid index\n");
+    UChar *s1 = ((Object*)self)->toString(self);
+    UChar *s2 = e->toString(e);
+    u_printf("ArrayList_add_at(%S, %d, %S): invalid index\n", s1, index, s2);
+    free(s1);
+    free(s2);
     return 0;
   }
   if (!resize_internal(self, index)) {
@@ -62,7 +68,7 @@ void ArrayList_clear(void *self) {
   ((ArrayList*)self)->_size = 0;
 }
 
-Object *ArrayList_get(void *self, int index) {
+Object *ArrayList_get(const void *self, int index) {
   if (index >= ((ArrayList*)self)->_size) {
     return NULL;
   }
@@ -85,7 +91,11 @@ Object *ArrayList_remove(void *self, int index) {
 
 Object *ArrayList_set(void *self, int index, Object *element) {
   if (index < 0 || index > ((ArrayList*)self)->_size) {
-    printf("invalid index\n");
+    UChar *s1 = ((Object*)self)->toString(self);
+    UChar *s2 = element->toString(element);
+    u_printf("ArrayList_set(%S, %d, %S): invalid index\n", s1, index, s2);
+    free(s1);
+    free(s2);
     return 0;
   }
   if (!resize_internal(self, index)) {
@@ -97,15 +107,24 @@ Object *ArrayList_set(void *self, int index, Object *element) {
   return r;
 }
 
-int ArrayList_size(void *self) {
+int ArrayList_size(const void *self) {
   return ((ArrayList*)self)->_size;
 }
 
 void ArrayList_destroy(void *self) {
-  int size = ((List*)self)->size(self);
+#ifdef _DEBUG
+  printf("destroying ArrayList of size: %d\n", ((ArrayList*)self)->_size);
+#endif
+  int size = ((ArrayList*)self)->_size;
   for (int i = 0; i < size; i++) {
-    Object *o = ((List*)self)->get(self, i);
+    Object *o = ((ArrayList*)self)->_obj[i];
+    //UChar *t = o->toString(o);
+    //u_printf("dropping ref for %S (%d)\n", t, o->__refcount);
     drop_ref(o);
+    //if (o != NULL) {
+    //  u_printf("%S now has %d refs\n", t, o->__refcount);
+    //}
+    //free(t);
   }
   free(((ArrayList*)self)->_obj);
   free(self);

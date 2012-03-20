@@ -1,7 +1,9 @@
 #include "pattern.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include <unicode/ustring.h>
 #include <unicode/uregex.h>
-#include <string.h>
 
 #define _r(N) (URegularExpression*)((Pattern*)N)->_state
 
@@ -12,7 +14,7 @@ void Pattern_destroy(void *self) {
   free(self);
 }
 
-UChar *Pattern_toString(void *self) {
+UChar *Pattern_toString(const void *self) {
   UErrorCode status = 0;
   const UChar *s = uregex_pattern(_r(self), NULL, &status);
   UChar *r = malloc(sizeof(UChar) * (u_strlen(s) + 1));
@@ -20,27 +22,27 @@ UChar *Pattern_toString(void *self) {
   return r;
 }
 
-int Pattern_getClass(void *self) {
+int Pattern_getClass(const void *self) {
   return PATTERN_CLASS;
 }
 
-int Pattern_instanceOf(void *self, int class) {
+int Pattern_instanceOf(const void *self, int class) {
   return class == PATTERN_CLASS || Object_instanceOf(self, class);
 }
 
-Matcher *Pattern_matcher_u(void *self, const UChar *s) {
+Matcher *Pattern_matcher_u(const void *self, const UChar *s) {
   return Matcher_new_u((Pattern*)self, s);
 }
 
-Matcher *Pattern_matcher_a(void *self, const char *s) {
+Matcher *Pattern_matcher_a(const void *self, const char *s) {
   return Matcher_new_a((Pattern*)self, s);
 }
 
-Matcher *Pattern_matcher_s(void *self, String *s) {
+Matcher *Pattern_matcher_s(const void *self, const String *s) {
   return Matcher_new_s((Pattern*)self, s);
 }
 
-void *Pattern_clone(void *self) {
+void *Pattern_clone(const void *self) {
   UErrorCode status = 0;
   const UChar *s = uregex_pattern(_r(self), NULL, &status);
   return (void*)Pattern_compile_u(s, 0);
@@ -79,14 +81,14 @@ Pattern *Pattern_compile_u(const UChar *str, int flags) {
 }
 
 Pattern *Pattern_compile_a(const char *str, int flags) {
-  UChar *s = malloc(strlen(str)+1);
+  UChar *s = malloc((strlen(str)+1) * sizeof(UChar));
   u_uastrcpy(s, str);
   Pattern *p = Pattern_compile_u(s, flags);
   free(s);
   return p;  
 }
 
-Pattern *Pattern_compile_s(String *str, int flags) {
+Pattern *Pattern_compile_s(const String *str, int flags) {
   UChar *s = str->toString(str);
   Pattern *p = Pattern_compile_u(s, flags);
   free(s);

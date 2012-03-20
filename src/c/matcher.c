@@ -12,7 +12,7 @@ void Matcher_destroy(void *self) {
   free(self);
 }
 
-UChar *Matcher_toString(void *self) {
+UChar *Matcher_toString(const void *self) {
   UErrorCode status = 0;
   const UChar *s = uregex_pattern((URegularExpression*)((Matcher*)self)->_pat->_state, NULL, &status);
   const UChar header[] = { '#', '<', 'M', 'a', 't', 'c', 'h', 'e', 'r', ' ', 
@@ -28,15 +28,15 @@ UChar *Matcher_toString(void *self) {
   return str;
 }
 
-int Matcher_getClass(void *self) {
+int Matcher_getClass(const void *self) {
   return MATCHER_CLASS;
 }
 
-int Matcher_instanceOf(void *self, int class) {
+int Matcher_instanceOf(const void *self, int class) {
   return class == MATCHER_CLASS || Object_instanceOf(self, class);
 }
 
-String *Matcher_group(void *self, int group) {
+String *Matcher_group(const void *self, int group) {
   UChar *resp;
   URegularExpression* regex = (URegularExpression*)((Matcher*)self)->_pat->_state;
   UErrorCode status;
@@ -54,7 +54,7 @@ String *Matcher_group(void *self, int group) {
   return NULL;
 }
 
-int Matcher_groupCount(void *self) {
+int Matcher_groupCount(const void *self) {
   UErrorCode status = 0;
   return uregex_groupCount((URegularExpression*)((Matcher*)self)->_pat->_state, &status);
 }
@@ -77,7 +77,7 @@ Object MatcherProto = {
   .destroy = Matcher_destroy
 };
 
-Matcher *Matcher_new_u(Pattern *p, const UChar *s) {
+Matcher *Matcher_new_u(const Pattern *p, const UChar *s) {
   _super_Object_new(Matcher, obj);
   obj->_pat = p->clone(p);
 
@@ -95,7 +95,7 @@ Matcher *Matcher_new_u(Pattern *p, const UChar *s) {
   return obj;
 }
 
-Matcher *Matcher_new_a(Pattern *p, const char *s) {
+Matcher *Matcher_new_a(const Pattern *p, const char *s) {
   UChar *u = malloc(strlen(s)+1);
   u_uastrcpy(u, s);
   Matcher *m = Matcher_new_u(p, u);
@@ -103,9 +103,9 @@ Matcher *Matcher_new_a(Pattern *p, const char *s) {
   return m;
 }
 
-Matcher *Matcher_new_s(Pattern *p, String *s) {
+Matcher *Matcher_new_s(const Pattern *p, const String *s) {
   UChar *u = s->toString(s);
   Matcher *m = Matcher_new_u(p, u);
-  free(s);
+  free(u);
   return m;
 }

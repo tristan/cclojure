@@ -8,9 +8,9 @@
 
 #define _extend_Pattern \
   _extend_Object; \
-  Matcher *(*matcher_u)(void *self, const UChar *s); \
-  Matcher *(*matcher_a)(void *self, const char *s); \
-  Matcher *(*matcher_s)(void *self, String *s); \
+  Matcher *(*matcher_u)(const void *self, const UChar *s); \
+  Matcher *(*matcher_a)(const void *self, const char *s); \
+  Matcher *(*matcher_s)(const void *self, const String *s); \
   void *_state
 
 struct Pattern {
@@ -21,6 +21,6 @@ typedef struct Pattern Pattern;
 
 Pattern *Pattern_compile_u(const UChar *str, int flags);
 Pattern *Pattern_compile_a(const char *str, int flags);
-Pattern *Pattern_compile_s(String *str, int flags);
+Pattern *Pattern_compile_s(const String *str, int flags);
 
 #endif

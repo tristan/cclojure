@@ -6,7 +6,7 @@
 
 #define _extend_LineNumberReader \
   _extend_Reader; \
-  int (*getLineNumber)(void *self); \
+  int (*getLineNumber)(const void *self); \
   Reader *reader; \
   int _linenum
 

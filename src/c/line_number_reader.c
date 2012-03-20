@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "unicode_utils.h"
 #include "line_number_reader.h"
 
 UChar LineNumberReader_read(void *self) {
@@ -37,21 +38,21 @@ long LineNumberReader_skip(void *self, long n) {
   return i;
 }
 
-int LineNumberReader_instanceOf(void *self, int class) {
+int LineNumberReader_instanceOf(const void *self, int class) {
   return class == LINENUMBERREADER_CLASS || Reader_instanceOf(self, class);
 }
 
-int LineNumberReader_getClass(void *self) {
+int LineNumberReader_getClass(const void *self) {
   return LINENUMBERREADER_CLASS;
 }
 
-UChar *LineNumberReader_toString(void *self) {
+UChar *LineNumberReader_toString(const void *self) {
   UChar *str = malloc(sizeof(UChar) * 26); // address should be 8 chars
   u_sprintf(str, "LineNumberReader@%x", self);
   return str;
 }
 
-int LineNumberReader_getLineNumber(void *self) {
+int LineNumberReader_getLineNumber(const void *self) {
   return ((LineNumberReader*)self)->_linenum;
 }
 

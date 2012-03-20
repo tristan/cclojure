@@ -17,9 +17,9 @@ struct Reader {
 
 typedef struct Reader Reader;
 
-UChar *Reader_toString(void *reader);
-int Reader_getClass(void *reader);
-int Reader_instanceOf(void *reader, int class);
+UChar *Reader_toString(const void *reader);
+int Reader_getClass(const void *reader);
+int Reader_instanceOf(const void *reader, int class);
 
 #define _super_Reader_new(T, O) \
   if (!T##Proto.read) return NULL; \

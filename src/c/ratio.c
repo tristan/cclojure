@@ -15,15 +15,15 @@ void Ratio_destroy(void *self) {
   free(self);
 }
 
-int Ratio_instanceOf(void *self, int class) {
+int Ratio_instanceOf(const void *self, int class) {
   return class == RATIO_CLASS || Number_instanceOf(self, class);
 }
 
-int Ratio_getClass(void *self) {
+int Ratio_getClass(const void *self) {
   return RATIO_CLASS;
 }
 
-UChar *Ratio_toString(void *self) {
+UChar *Ratio_toString(const void *self) {
   char *astr = mpq_get_str(NULL, 10, _r(self));
   if (astr) {
     UChar *ustr = malloc(sizeof(UChar) * strlen(astr));
@@ -34,7 +34,7 @@ UChar *Ratio_toString(void *self) {
   return NULL;
 }
 
-int Ratio_equals(void *self, void* obj) {
+int Ratio_equals(const void *self, const void* obj) {
   if (((Object*)self)->getClass(self) != Ratio_getClass(self)) {
     puts("calling Ratio_equals on non ratio object is strange!");
   } else {
@@ -85,7 +85,7 @@ Ratio *Ratio_new_i(int numerator, int denominator) {
   return obj;
 }
 
-Ratio *Ratio_new_I(Integer* numerator, Integer* denominator) {
+Ratio *Ratio_new_I(const Integer* numerator, const Integer* denominator) {
   _super_Number_new(Ratio, obj);
 
   mpq_t* rt = malloc(sizeof(mpq_t));
@@ -97,7 +97,7 @@ Ratio *Ratio_new_I(Integer* numerator, Integer* denominator) {
   return obj;
 }
 
-Ratio *Ratio_new_s(const UChar *numerator, const UChar *denominator) {
+Ratio *Ratio_new_u(const UChar *numerator, const UChar *denominator) {
   _super_Number_new(Ratio, obj);
 
   char *adivid = malloc(u_strlen(numerator)+1);
@@ -123,6 +123,15 @@ Ratio *Ratio_new_s(const UChar *numerator, const UChar *denominator) {
 
   obj->_num = quad;
   return obj;
+}
+
+Ratio *Ratio_new_s(const String *numerator, const String *denominator) {
+  UChar *n = numerator->toString(numerator);
+  UChar *d = denominator->toString(denominator);
+  Ratio *r = Ratio_new_u(n, d);
+  free(n);
+  free(d);
+  return r;
 }
 
 Ratio *Ratio_valueOf(const UChar *s) {

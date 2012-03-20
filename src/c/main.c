@@ -24,17 +24,20 @@ int main(int argc, char *argv[]) {
   ArrayList *list = ArrayList_new(8);
   list->add(list, (Object*)fr);
   list->add(list, (Object*)lnr);
-  list->add(list, (Object*)o);
+  if (o != NULL) {
+    list->add(list, (Object*)o);
+  }
 
   UChar *s = list->toString(list);
   u_printf("%S\n", s);
   free(s);
-  // list->destroy(list)
+
+  drop_ref(list);
 
   drop_ref(o);
-
   drop_ref(lnr);
   drop_ref(fr);
+
   u_fclose(f);
 
   LispReader_shutdown();
