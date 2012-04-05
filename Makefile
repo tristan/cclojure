@@ -1,35 +1,13 @@
-CFLAGS=-Wall -g -std=c99 -licuuc -licudata -licui18n -licuio -lgmp
+CLJHOME = $(abspath .)
 
-SEQS=src/c/seq.o src/c/cons.o src/c/empty_seq.o
-LISTS=src/c/list.o src/c/arraylist.o
-NUMBERS=src/c/number.o src/c/integer.o src/c/decimal.o src/c/ratio.o
-READERS=src/c/reader.o src/c/file_reader.o src/c/line_number_reader.o
-REGEX=src/c/pattern.o src/c/matcher.o
-OBJECTS=src/c/object.o src/c/string.o ${NUMBERS} ${READERS} ${LISTS} ${REGEX} ${SEQS}
+#all: cclj
 
-src/c/main: ${OBJECTS} src/c/lisp_reader.o src/c/string_buffer.o src/c/unicode_utils.o
-
-src/c/whiteboard: src/c/object.o src/c/string.o src/c/string_buffer.o ${REGEX}
-
-cclj: src/c/main
-	mkdir -p bin
-	mv src/c/main bin/cclj
-
-src/c/testing: src/c/object.o
-
-testing: src/c/testing
-	mkdir -p bin
-	mv src/c/testing bin/testing
-
-whiteboard: src/c/whiteboard
-	mkdir -p bin
-	mv src/c/whiteboard bin/
-
-all: cclj
+release:
+	cd src/c && make
 
 clean:
-	find . -iname '*.o' -exec rm {} \;
-	rm bin/*
+	rm -f *~ *#
+	cd src/c && make clean
 
-clean-emacs:
-	find . -iname '*~' -exec rm {} \;
+test: cclj
+	cd test && make
