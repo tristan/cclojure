@@ -1,6 +1,20 @@
 #ifndef CLOJURE_H
 #define CLOJURE_H
 
+/*
+  clojure has symbol/var/keyword types
+  as well as namespaces for symbols
+
+  symbol: not global, creating results in the variable only
+          stores it's namespace as a string only
+  keyword: global, created and stored in a global table
+  var: attached to a namespace, refers to a value/fn/etc (i.e. an Object)
+       (may be equiv to some cvalue stuff ?)
+
+  namespaces: global, store symbol -> object mappings
+
+ */
+
 typedef uptrint_t value_t;
 typedef int_t fixnum_t;
 #ifdef BITS64
@@ -15,18 +29,18 @@ typedef struct {
 } cons_t;
 
 typedef struct _symbol_t {
-    uptrint_t flags;
-    value_t binding;   // global value binding
-    struct _cljtype_t *type;
-    uint32_t hash;
-    void *dlcache;     // dlsym address
-    // below fields are private
-    struct _symbol_t *left;
-    struct _symbol_t *right;
-    union {
-        char name[1];
-        void *_pad;    // ensure field aligned to pointer size
-    };
+  uptrint_t flags;
+  value_t binding;   // global value binding
+  struct _cljtype_t *type;
+  uint32_t hash;
+  void *dlcache;     // dlsym address
+  // below fields are private
+  struct _symbol_t *left;
+  struct _symbol_t *right;
+  union {
+    char name[1];
+    void *_pad;    // ensure field aligned to pointer size
+  };
 } symbol_t;
 
 typedef struct {

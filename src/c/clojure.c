@@ -240,7 +240,7 @@ int clj_is_keyword_name(char *str, size_t len)
     return ((str[0] == ':' || str[len-1] == ':') && str[1] != '\0');
 }
 
-static symbol_t *mk_symbol(char *str)
+static symbol_t *mk_symbol(value_t ns, char *str)
 {
     symbol_t *sym;
     size_t len = strlen(str);
@@ -251,7 +251,7 @@ static symbol_t *mk_symbol(char *str)
     sym->flags = 0;
     if (clj_is_keyword_name(str, len)) {
         value_t s = tagptr(sym, TAG_SYM);
-        setc(s, s);
+        setc(s, s); // sets ->flags |= 1, ->binding = s
         sym->flags |= 0x2;
     }
     else {
@@ -259,6 +259,7 @@ static symbol_t *mk_symbol(char *str)
     }
     sym->type = sym->dlcache = NULL;
     sym->hash = memhash32(str, len)^0xAAAAAAAA;
+    sym->namespace = ns;
     strcpy(&sym->name[0], str);
     return sym;
 }
@@ -279,13 +280,13 @@ static symbol_t **symtab_lookup(symbol_t **ptree, char *str)
     return ptree;
 }
 
-value_t symbol(char *str)
+value_t symbol(char *name)
 {
     symbol_t **pnode;
 
-    pnode = symtab_lookup(&symtab, str);
+    pnode = symtab_lookup(&symtab, name);
     if (*pnode == NULL)
-        *pnode = mk_symbol(str);
+      *pnode = mk_symbol(name);
     return tagptr(*pnode, TAG_SYM);
 }
 
