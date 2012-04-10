@@ -1,0 +1,31 @@
+This is still just [femotolisp](https://github.com/JeffBezanson/femtolisp). I'm learning how it works to see if I can modify it to support clojure syntax. Below are my notes
+
+clojure has symbol/var/keyword types as well as namespaces for symbols
+
+symbol: not global, creating results in the variable only stores it's namespace as a string only
+keyword: global, created and stored in a global table
+var: attached to a namespace, refers to a value/fn/etc (i.e. an Object) (may be equiv to some cvalue stuff ?)
+namespaces: global, store symbol -> object mappings
+
+namespaces in clj:
+ - stored as a string in the symbol rather than a reference
+
+
+
+values:
+ - femto does not handle arbitrary precision of integers
+
+threading:
+ - femto is single threaded
+
+
+lazy-eval:
+ - no lazy eval in femto (that i can tell)
+
+
+femtolisp project euler prob 1
+(define (pr1 n) (let ((x 0) (r 0)) (while (< x n) (begin (if (or (eq? (mod x 5) 0) (eq? (mod x 3) 0)) (set! r (+ r x))) (set! x (+ 1 x)))) r))
+(pr1 1000)
+
+
+perhaps it's a better idea to start from scratch, and use femto as a guide for optimisations once i understand all the concepts properly.
