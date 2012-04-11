@@ -3,4 +3,6 @@
 
 typedef uptrint_t value_t;
 
+void lerror(jmp_buf toplevel, char *format, ...);
+
 #endif

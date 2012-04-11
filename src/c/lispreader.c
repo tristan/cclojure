@@ -1,10 +1,7 @@
 #include <stdio.h>
 #include <ctype.h>
-#include "dtypes.h"
-#include "utils.h"
-#include "utf8.h"
-#include "timefuncs.h"
-#include "ios.h"
+#include <setjmp.h>
+#include "llt.h"
 #include "clojure.h"
 #include "lispreader.h"
 
@@ -16,10 +13,13 @@ typedef struct {
 
   u_int32_t toktype; // the last read token's type
   value_t tokval;
+
+  // setjmp variable
+  jmp_buf toplevel;
 } readerstate_t;
 
 enum {
-  TOK_NONE,
+  TOK_NONE = 0,
   TOK_OPEN,
   TOK_CLOSE,
   TOK_OPENBRACKET,
@@ -35,7 +35,43 @@ enum {
   TOK_UNQUOTE,
   TOK_CHAR,
   TOK_ARG,
-  TOK_DISPATCH
+  TOK_DISPATCH,
+  TOK_NUM
+};
+
+value_t handle_unexpected_token(readerstate_t *state, char tok);
+value_t read_list(readerstate_t *state, char tok);
+value_t read_vector(readerstate_t *state, char tok);
+value_t read_map(readerstate_t *state, char tok);
+value_t read_comment(readerstate_t *state, char tok);
+value_t read_string(readerstate_t *state, char tok);
+value_t wrapped_read(readerstate_t *state, char tok);
+value_t read_meta(readerstate_t *state, char tok);
+value_t read_syntax_quote(readerstate_t *state, char tok);
+value_t read_unquote(readerstate_t *state, char tok);
+value_t read_char(readerstate_t *state, char tok);
+value_t read_arg(readerstate_t *state, char tok);
+value_t read_dispatch(readerstate_t *state, char tok);
+value_t read_number(readerstate_t *state, char tok);
+
+typedef value_t(*macro_fn)(readerstate_t*, char tok);
+static macro_fn macros[] = {
+  ['('] = read_list,
+  [')'] = handle_unexpected_token,
+  ['['] = read_vector,
+  [']'] = handle_unexpected_token,
+  ['{'] = read_map,
+  ['}'] = handle_unexpected_token,
+  [';'] = read_comment,
+  ['"'] = read_string,
+  ['\''] = wrapped_read,
+  ['@'] = wrapped_read,
+  ['^'] = read_meta,
+  ['`'] = read_syntax_quote,
+  ['~'] = read_unquote,
+  ['\\'] = read_char,
+  ['%'] = read_arg,
+  ['#'] = read_dispatch
 };
 
 static char nextchar(ios_t *f) {
@@ -54,6 +90,10 @@ static char nextchar(ios_t *f) {
     c = (char)ch;
   } while (c == ' ' || c == ',' || isspace(c));
   return c;
+}
+
+static void take(readerstate_t *state) {
+  state->toktype = TOK_NONE;
 }
 
 static u_int32_t peek(readerstate_t *state) {
@@ -97,13 +137,18 @@ static u_int32_t peek(readerstate_t *state) {
     toktype = TOK_ARG;
   } else if (c == '#') {
     toktype = TOK_DISPATCH;
+  } else if (c == '+' || c == '-' || isdigit(c)) {
+    toktype = TOK_NUM;
   }
   state->toktype = toktype;
   return state->toktype;
 }
 
 static value_t read(readerstate_t *state) {
-  return state->eof_value;
+  u_int32_t t = peek(state);
+  take(state);
+  value_t rval = macros[t](state, t);
+  return rval;
 }
 
 value_t lispreader_read(ios_t *in, char eof_is_error, value_t eof_value, char is_recursive) {
@@ -117,5 +162,85 @@ value_t lispreader_read(ios_t *in, char eof_is_error, value_t eof_value, char is
     .tokval = 0
   };
 
-  return read(&rs);
+  if (setjmp(rs.toplevel)) {
+    //fprintf(stderr, "\nerror reading input\n");
+    return 0;
+  } else {
+    return read(&rs);
+  }
+}
+
+value_t handle_none(readerstate_t *state, u_int32_t tok) {
+  return -1;
+}
+
+value_t handle_unexpected_token(readerstate_t *state, u_int32_t tok) {
+  char c;
+  switch (tok) {
+  case TOK_CLOSE:
+    c = ')';
+    break;
+  case TOK_CLOSEBRACKET:
+    c = ']';
+    break;
+  case TOK_CLOSEBRACE:
+    c = '}';
+    break;
+  default:
+    c = '\0';
+  }
+  lerror(state->toplevel, "Unmatched delimiter: %c\n", c);
+  return 0;
+}
+
+value_t read_list(readerstate_t *state, u_int32_t tok) {
+  return -1;
+}
+
+value_t read_vector(readerstate_t *state, u_int32_t tok) {
+  return -1;
+}
+
+value_t read_map(readerstate_t *state, u_int32_t tok) {
+  return -1;
+}
+
+value_t read_comment(readerstate_t *state, u_int32_t tok) {
+  return -1;
+}
+
+value_t read_string(readerstate_t *state, u_int32_t tok) {
+  return -1;
+}
+
+value_t wrapped_read(readerstate_t *state, u_int32_t tok) {
+  return -1;
+}
+
+value_t read_meta(readerstate_t *state, u_int32_t tok) {
+  return -1;
+}
+
+value_t read_syntax_quote(readerstate_t *state, u_int32_t tok) {
+  return -1;
+}
+
+value_t read_unquote(readerstate_t *state, u_int32_t tok) {
+  return -1;
+}
+
+value_t read_char(readerstate_t *state, u_int32_t tok) {
+  return -1;
+}
+
+value_t read_arg(readerstate_t *state, u_int32_t tok) {
+  return -1;
+}
+
+value_t read_dispatch(readerstate_t *state, u_int32_t tok) {
+  return -1;
+}
+
+value_t read_number(readerstate_t *state, u_int32_t tok) {
+  return -1;
 }
