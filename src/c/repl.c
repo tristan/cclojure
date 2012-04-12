@@ -14,7 +14,6 @@ void c_repl(ios_t *input) {
     if (o == IOS_EOF) {
       break;
     }
-    break;
   }
   puts("");
 }

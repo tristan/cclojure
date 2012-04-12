@@ -63,7 +63,7 @@ static inline int iswhitespace(char c) {
 static inline int ismacro(char c) {
   // TODO: is it garanteed that missing values are NULL ?
   // must check bounds because char is signed, but we could read all 256
-  return (c > 0 && c < 128 && macros[c] != NULL) ? 1 : 0;
+  return (c > 0 && c < 128 && macros[(int)c] != NULL) ? 1 : 0;
 }
 
 static void accumchar(readerstate_t *state, char c, int *pi)
@@ -299,8 +299,133 @@ value_t read_dispatch(readerstate_t *state, char tok) {
   return 0;
 }
 
+value_t mk_number(char *buf, int base) {
+  return 0;
+}
+
 value_t read_number(readerstate_t *state, char tok) {
-  lerror(state->toplevel, "not yet implemented");
+  char *buf1, *buf2 = NULL, special = 0;
+  size_t i = 0, sz = 64;
+  int c;
+  u_int32_t base = 10;
+  int sign = 1;
+  buf1 = malloc(sz);
+  while (1) {
+    if (tok == '0') {
+      c = ios_getc(state->input);
+      if (c == IOS_EOF || iswhitespace(c)) {
+        buf1[0] = tok;
+        buf1[1] = '\0';
+        value_t rval = mk_number("0", 10);
+        free(buf1);
+        return rval;
+      } else if (c == 'x') {
+        base = 16;
+        special = 'x';
+        break;
+      } else if (c >= '0' && c <= '7') {
+        ios_ungetc(c, state->input);
+        base = 8;
+        special = '0';
+        break;
+      }
+    } else if (tok == '-' || tok == '+') {
+      if (tok == '-') {
+        sign = -1;
+      }
+      tok = ios_getc(state->input);
+    } else {
+      buf1[i++] = tok;
+      break;
+    }
+  }
+  while (1) {
+    if (i >= sz-1) {
+      sz *= 2;
+      char *tmp = realloc(buf1, sz);
+      if (tmp == NULL) {
+        free(buf1);
+        lerror(state->toplevel, "out of memory reading number");
+      }
+      buf1 = tmp;
+    }
+    c = ios_getc(state->input);
+    if (c == IOS_EOF || iswhitespace(c) || ismacro(c)) {
+      // TODO: mk number!
+      printf("got number: ");
+      if (buf2 != NULL) {
+        printf("%s%c%s\n", buf2, special, buf1);
+        free(buf2);
+      } else {
+        printf("%d(r)%s\n", base, buf1);
+      }
+      free(buf1);
+      return 0;
+    }
+    if (c == 'r' && i < 3) {
+      // check if we're already in a special number form (meaning entering another in invalid)
+      if (special) {   
+        break;
+      }
+      if (i < 3 && (i == 1 || buf1[0] < '3' || buf1[1] < '7')) { // max valid radix is 36
+        buf1[i] = '\0';
+        base = strtol(buf1, NULL, 10);
+        i = 0;
+        special = 'r';
+      } else {
+        free(buf1);
+        lerror(state->toplevel, "Radix out of range");
+      }
+    } else if (c == '/' || ((c == 'e' || c == 'E') && base == 10)) {
+      if (special && (special != '.' || c != 'e' || c != 'E')) {
+        break;
+      }
+      special = c == 'E' ? 'e' : c;
+      buf1[i] = '\0';
+      buf2 = buf1;
+      buf1 = malloc(sz);
+      i = 0;
+      if (special == 'e') {
+        c = ios_getc(state->input);
+        if (c == '-' || c == '+' || (c >= '0' && c <= '9')) {
+          buf1[i++] = c;
+        } else {
+          break;
+        }
+      }
+    } else if (c == '.') {
+      if (special) {
+        break;
+      }
+      special = '.';
+      buf1[i++] = c;
+    } else if ((c == 'N' || c == 'M') && base == 10) {
+      // make sure the next char terminates the number
+      c = ios_getc(state->input);
+      if (c == IOS_EOF || c == iswhitespace(c) || ismacro(c)) {
+        ios_ungetc(c, state->input);
+      } else {
+        break;
+      }
+    } else if (c >= '0' && ((base < 11 && (c < '0' + base)) || 
+                            (base > 10 && (c <= '9' || 
+                                           (c >= 'a' && c < 'a' + (base-10)) ||
+                                           (c >= 'A' && c < 'A' + (base-10))
+                                           )))) {
+      buf1[i++] = c;
+    } else {
+      break;
+    }
+  }
+  
+  // note: should only get here when we have an invalid number
+  free(buf1);
+  if (buf2 != NULL) {
+    free(buf2);
+  }
+  // TODO: to match clojure's error, we need the whole number
+  // consider reading the whole number before processing it
+  lerror(state->toplevel, "Invalid number");
   return 0;
 }
 
