@@ -3,7 +3,7 @@ CC = clang
 
 NAME = clojure
 
-SRCS = $(NAME).c ios.c utf8.c timefuncs.c repl.c lispreader.c
+SRCS = $(NAME).c ios.c utf8.c timefuncs.c types.c repl.c lispreader.c
 OBJS = $(SRCS:%.c=%.o)
 DOBJS = $(SRCS:%.c=%.do)
 EXENAME = cclj

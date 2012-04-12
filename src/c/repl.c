@@ -10,7 +10,7 @@ void c_repl(ios_t *input) {
   while (1) {
     ios_printf(ios_stdout, "%s=> ", namespace);
     ios_flush(ios_stdout);
-    value_t o = lispreader_read(input, 1, IOS_EOF, 0);
+    value_t o = lispreader_read(input, 0, IOS_EOF, 0);
     if (o == IOS_EOF) {
       break;
     }

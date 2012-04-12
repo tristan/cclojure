@@ -1,10 +1,12 @@
-Files taken from [femotolisp](https://github.com/JeffBezanson/femtolisp):
+Files taken directly from [femotolisp](https://github.com/JeffBezanson/femtolisp):
  * ios.c/h
  * utils.h
  * dtypes.h
  * utf8.c/h
  * timefuncs.c/h
-
+ * htable.c/h/inc
+ * hashing.c/h
+ * equalhash.c/h
 
 femtolisp project euler prob 1
 (define (pr1 n) (let ((x 0) (r 0)) (while (< x n) (begin (if (or (eq? (mod x 5) 0) (eq? (mod x 3) 0)) (set! r (+ r x))) (set! x (+ 1 x)))) r))

@@ -16,9 +16,18 @@ typedef struct {
   char *buf;
   int bufsize;
 
+  // stack stuff
+#define N_STACK 49152
+  value_t stack[N_STACK];
+  u_int32_t sp;
+
   // setjmp variable
   jmp_buf toplevel;
 } readerstate_t;
+
+#define PUSH(s,v) (s->stack[s->sp++] = (v))
+#define POP(s)   (s->stack[--s->sp])
+#define POPN(s,n) (s->sp-=(n))
 
 value_t handle_unexpected_token(readerstate_t *state, char tok);
 value_t read_list(readerstate_t *state, char tok);
@@ -131,7 +140,8 @@ value_t lispreader_read(ios_t *in, char eof_is_error, value_t eof_value, char is
     .input = in,
     .eof_value = eof_value,
     .recursive = is_recursive,
-    .error_on_eof = eof_is_error
+    .error_on_eof = eof_is_error,
+    .sp = 0
   };
   rs.bufsize = 256;
   rs.buf = malloc(rs.bufsize);
@@ -139,9 +149,10 @@ value_t lispreader_read(ios_t *in, char eof_is_error, value_t eof_value, char is
   if (setjmp(rs.toplevel)) {
     // an error occured, clean up
     free(rs.buf);
-    return -1;
+    return 0; // TODO: store error in state, return that
   } else {
-    if (macros[0] != NULL) {
+    if (macros[0] != NULL) { // check to make sure non-specified macros are null
+      // can remove this if this is proven to always be the case
       lerror(rs.toplevel, "macros[0] is not null!");
     }
     return read(&rs);
