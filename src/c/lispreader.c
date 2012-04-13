@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <assert.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <setjmp.h>
@@ -23,6 +24,8 @@ typedef struct {
   // setjmp variable
   jmp_buf toplevel;
 } readerstate_t;
+
+static value_t NIL;
 
 #define PUSH(s,v) (s->stack[s->sp++] = (v))
 #define POP(s)   (s->stack[--s->sp])
@@ -92,8 +95,7 @@ static char nextchar(ios_t *f, char skip_whitespace) {
   return c;
 }
 
-static value_t read(readerstate_t *state) {
-  char c = nextchar(state->input, 1);
+static value_t read(readerstate_t *state, char c) {
   if (ios_eof(state->input)) {
     if (state->error_on_eof) {
       lerror(state->toplevel, "EOF while reading");
@@ -136,7 +138,7 @@ value_t lispreader_read(ios_t *in, value_t ns, char eof_is_error, value_t eof_va
       // can remove this if this is proven to always be the case
       lerror(rs.toplevel, "macros[0] is not null!");
     }
-    return read(&rs);
+    return read(&rs, nextchar(rs.input, 1));
   }
 }
 
@@ -146,8 +148,42 @@ value_t handle_unexpected_token(readerstate_t *state, char tok) {
 }
 
 value_t read_list(readerstate_t *state, char tok) {
-  lerror(state->toplevel, "not yet implemented");
-  return 0;
+  //lerror(state->toplevel, "not yet implemented");
+  value_t rval = 0;
+  int sz = 0;
+  PUSH(state, NIL);
+  value_t *pc = &state->stack[state->sp-1];
+  char t = nextchar(state->input, 1);
+  while (t != ')') {
+    if (ios_eof(state->input)) {
+      lerror(state->toplevel, "EOF while reading");
+    }
+    value_t c = mk_list();
+    lcar_(c) = lcdr_(c) = NIL;
+    if (islist(*pc)) {
+      lcdr_(*pc) = c;
+    } else {
+      rval = c;
+      // TODO: i don't understand the backrefs/label stuff used in femto here
+    }
+    *pc = c;
+    c = read(state, t);
+    lcar_(*pc) = c;
+    sz++;
+    
+    t = nextchar(state->input, 1);
+  }
+  // assign sizes to support O(1) count of lists
+  // TODO: this may not really be needed unless
+  // building a non-evaluated list (e.g. '(1 2 3))
+  *pc = rval;
+  while (sz > 0) {
+    lsize(*pc) = sz;
+    sz--;
+    *pc = lcdr_(*pc);
+  }
+  (void)POP(state);
+  return rval;
 }
 
 value_t read_vector(readerstate_t *state, char tok) {
@@ -293,16 +329,11 @@ value_t read_dispatch(readerstate_t *state, char tok) {
   return 0;
 }
 
-value_t mk_number(char *buf, int base) {
-  return 0;
-}
-
 value_t read_number(readerstate_t *state, char tok) {
   char *buf1, *buf2 = NULL, special = 0;
   size_t i = 0, sz = 64;
   int c;
   u_int32_t base = 10;
-  int sign = 1;
   buf1 = malloc(sz);
   while (1) {
     if (tok == '0') {
@@ -310,7 +341,7 @@ value_t read_number(readerstate_t *state, char tok) {
       if (c == IOS_EOF || iswhitespace(c)) {
         buf1[0] = tok;
         buf1[1] = '\0';
-        value_t rval = mk_number("0", 10);
+        value_t rval = mk_integer("0", 10);
         free(buf1);
         return rval;
       } else if (c == 'x') {
@@ -325,7 +356,7 @@ value_t read_number(readerstate_t *state, char tok) {
       }
     } else if (tok == '-' || tok == '+') {
       if (tok == '-') {
-        sign = -1;
+        buf1[i++] = tok;
       }
       tok = ios_getc(state->input);
     } else {
@@ -345,16 +376,25 @@ value_t read_number(readerstate_t *state, char tok) {
     }
     c = ios_getc(state->input);
     if (c == IOS_EOF || iswhitespace(c) || ismacro(c)) {
-      // TODO: mk number!
-      printf("got number: ");
+      value_t num = 0;
       if (buf2 != NULL) {
-        printf("%s%c%s\n", buf2, special, buf1);
+        buf2[i] = '\0';
+        if (special == '/') {
+          num = mk_ratio(buf2, buf1);
+        } else {
+          assert(0); // TODO: should never get here, remove when decent tests exist
+        }
         free(buf2);
       } else {
-        printf("%d(r)%s\n", base, buf1);
+        buf1[i] = '\0';
+        if (special == '.' || special == 'e') {
+          num = mk_decimal(buf1);
+        } else {
+          num = mk_integer(buf1, base);
+        }
       }
       free(buf1);
-      return 0;
+      return num;
     }
     if (c == 'r' && i < 3) {
       // check if we're already in a special number form (meaning entering another in invalid)
@@ -370,15 +410,21 @@ value_t read_number(readerstate_t *state, char tok) {
         free(buf1);
         lerror(state->toplevel, "Radix out of range");
       }
-    } else if (c == '/' || ((c == 'e' || c == 'E') && base == 10)) {
-      if (special && (special != '.' || c != 'e' || c != 'E')) {
+    } else if (c == '/') {
+      if (special) {
         break;
       }
-      special = c == 'E' ? 'e' : c;
+      special = c;
       buf1[i] = '\0';
       buf2 = buf1;
       buf1 = malloc(sz);
       i = 0;
+    } else if (c == '.' || ((c == 'e' || c == 'E') && base == 10)) {
+      if (special || (special == '.' && c == '.')) {
+        break;
+      }
+      special = c == 'E' ? 'e' : c;;
+      buf1[i++] = c;
       if (special == 'e') {
         c = ios_getc(state->input);
         if (c == '-' || c == '+' || (c >= '0' && c <= '9')) {
@@ -387,12 +433,6 @@ value_t read_number(readerstate_t *state, char tok) {
           break;
         }
       }
-    } else if (c == '.') {
-      if (special) {
-        break;
-      }
-      special = '.';
-      buf1[i++] = c;
     } else if ((c == 'N' || c == 'M') && base == 10) {
       // make sure the next char terminates the number
       c = ios_getc(state->input);

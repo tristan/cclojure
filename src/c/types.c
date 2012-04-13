@@ -16,8 +16,18 @@ static value_t mk_value(size_t sz) {
   return tagptr(ptv, TAG_TYPEDVALUE);
 }
 
+value_t mk_list() {
+  value_t v = mk_value(sizeof(list_t));
+  lsize(v) = 0;
+  lcar_(v) = 0;
+  lcdr_(v) = 0;
+  typedvalue_type(v) = T_LIST;
+  return v;
+}
+
 value_t mk_stringn(char *str, size_t sz) {
   value_t v = mk_value(sz);
+  typedvalue_type(v) = T_STRING;
   memcpy(typedvalue_data(v), str, sz);
   return v;
 }
@@ -27,17 +37,60 @@ value_t mk_string(char *str) {
   return mk_stringn(str, sz);
 }
 
-value_t mk_integer(char *i) {
-  return 0;
+value_t mk_integer(char *i, int base) {
+  value_t v = mk_value(sizeof(int64_t));
+  typedvalue_type(v) = T_INTEGER;
+  *(int64_t*)typedvalue_data(v) = strtoll(i, &i+strlen(i), base);
+  return v;
 }
 
-value_t mk_decimal(char *d, char *exp) {
-  return 0;
+value_t mk_decimal(char *d) {
+  value_t v = mk_value(sizeof(double));
+  typedvalue_type(v) = T_DECIMAL;
+  *(double*)typedvalue_data(v) = strtod(d, &d+strlen(d));
+  return v;
 }
+
+typedef struct {
+  int64_t num;
+  int64_t den;
+} ratio_t;
+
+#define str_val(v) ((char*)typedvalue_data(v))
+#define int_val(v) (*(int64_t*)typedvalue_data(v))
+#define dec_val(v) (*(double*)typedvalue_data(v))
+#define ratio_num(v) (((ratio_t*)typedvalue_data(v))->num)
+#define ratio_den(v) (((ratio_t*)typedvalue_data(v))->den)
 
 value_t mk_ratio(char *n, char *d) {
-  return 0;
+  value_t v = mk_value(sizeof(ratio_t));
+  typedvalue_type(v) = T_RATIO;
+  ratio_num(v) = strtoll(n, &n+strlen(n), 10);
+  ratio_den(v) = strtoll(d, &d+strlen(d), 10);
+  return v;
 }
+
+value_t reduce(value_t n) {
+  //if (isratio(n)) {
+    // TODO:
+  //}
+  return n;
+}
+
+void print_typedval(ios_t *out, value_t v) {
+  if (isratio(v)) {
+    ios_printf(out, "ratio: %ld/%lu\n", ratio_num(v), ratio_den(v));
+  } else if (isinteger(v)) {
+    ios_printf(out, "integer: %ld\n", int_val(v));
+  } else if (isdecimal(v)) {
+    ios_printf(out, "decimal: %f\n", dec_val(v));
+  } else if (isstring(v)) {
+    ios_printf(out, "string: %s\n", str_val(v));
+  } else {
+    ios_printf(out, "unknown value type at: %x\n", v);
+  }
+}
+
 
 static symbol_t *mk_symbol(char *str) {
   size_t len = strlen(str);
