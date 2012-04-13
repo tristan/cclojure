@@ -6,11 +6,11 @@
 #include "lispreader.h"
 
 void c_repl(ios_t *input) {
-  char *namespace = "user";
+  value_t ns = namespace("user");
   while (1) {
-    ios_printf(ios_stdout, "%s=> ", namespace);
+    ios_printf(ios_stdout, "%s=> ", namespace_name(ns));
     ios_flush(ios_stdout);
-    value_t o = lispreader_read(input, 0, IOS_EOF, 0);
+    value_t o = lispreader_read(input, ns, 0, IOS_EOF, 0);
     if (o == IOS_EOF) {
       break;
     }

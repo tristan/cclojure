@@ -12,14 +12,13 @@ typedef struct {
   char error_on_eof; // should an error be thrown if eof is reached?
   char recursive; // 
 
-  // token reading buffer
-  char *buf;
-  int bufsize;
-
   // stack stuff
 #define N_STACK 49152
   value_t stack[N_STACK];
   u_int32_t sp;
+
+  // current namespace
+  value_t namespace;
 
   // setjmp variable
   jmp_buf toplevel;
@@ -75,22 +74,6 @@ static inline int ismacro(char c) {
   return (c > 0 && c < 128 && macros[(int)c] != NULL) ? 1 : 0;
 }
 
-static void accumchar(readerstate_t *state, char c, int *pi)
-{
-  state->buf[(*pi)++] = c;
-  if (*pi >= state->bufsize-1) {
-    // resize here to support 'infinite' length 'everything'
-    // TODO: maybe choose a less greedy expansion here?
-    // just remember, the less mallocs the better!
-    char *tmp = realloc(state->buf, state->bufsize * 2);
-    if (tmp == NULL) {
-      lerror(state->toplevel, "out of memory");
-    }
-    state->bufsize *= 2;
-    state->buf = tmp;
-  }
-}
-
 static char nextchar(ios_t *f, char skip_whitespace) {
   int ch;
   char c;
@@ -134,21 +117,19 @@ static value_t read(readerstate_t *state) {
   }
 }
 
-value_t lispreader_read(ios_t *in, char eof_is_error, value_t eof_value, char is_recursive) {
+value_t lispreader_read(ios_t *in, value_t ns, char eof_is_error, value_t eof_value, char is_recursive) {
 
   readerstate_t rs = {
     .input = in,
     .eof_value = eof_value,
     .recursive = is_recursive,
     .error_on_eof = eof_is_error,
+    .namespace = ns,
     .sp = 0
   };
-  rs.bufsize = 256;
-  rs.buf = malloc(rs.bufsize);
-
   if (setjmp(rs.toplevel)) {
     // an error occured, clean up
-    free(rs.buf);
+    // TODO: should probably free everything that was put on the stack here
     return 0; // TODO: store error in state, return that
   } else {
     if (macros[0] != NULL) { // check to make sure non-specified macros are null
@@ -271,8 +252,10 @@ value_t read_string(readerstate_t *state, char tok) {
     }
   }
   // TODO: make value to return
+  buf[i] = '\0';
+  value_t r = mk_stringn(buf, i);
   free(buf);
-  return 0;
+  return r;
 }
 
 value_t wrapped_read(readerstate_t *state, char tok) {
@@ -440,8 +423,15 @@ value_t read_number(readerstate_t *state, char tok) {
   return 0;
 }
 
+// TODO: perhaps rename this to read_symbol, as that's what it really does
 value_t read_token(readerstate_t *state, char tok) {
   int i = 0;
+  // TODO: an optimization here would be to have all the buffers
+  // for this and the string/number functions in the state so
+  // we reuse the same part of memory and reduce the number of
+  // mallocs we use
+  size_t sz = 256;
+  char *buf = malloc(sz);
   ios_ungetc(tok, state->input);
   while (1) {
     char c = nextchar(state->input, 0);
@@ -449,9 +439,21 @@ value_t read_token(readerstate_t *state, char tok) {
       ios_ungetc(c, state->input);
       break;
     } 
-    accumchar(state, c, &i);
+    buf[i++] = c;
+    if (i >= sz-1) {
+      // resize here to support 'infinite' length 'everything'
+      // TODO: maybe choose a less greedy expansion here?
+      // just remember, the less mallocs the better!
+      char *tmp = realloc(buf, sz * 2);
+      if (tmp == NULL) {
+        lerror(state->toplevel, "out of memory");
+      }
+      sz *= 2;
+      buf = tmp;
+    }
   }
-  state->buf[i++] = '\0';
-  // TODO: make into symbol
-  return 0;
+  buf[i] = '\0';
+  value_t sym = symbol(state->namespace, buf);
+  free(buf);
+  return sym;
 }

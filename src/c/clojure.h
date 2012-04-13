@@ -7,4 +7,6 @@
 
 void lerror(jmp_buf toplevel, char *format, ...)  __attribute__ ((__noreturn__));
 
+value_t *alloc_words(int n);
+
 #endif
