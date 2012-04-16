@@ -110,7 +110,9 @@ static value_t read(readerstate_t *state, char c) {
       }
     }
     if (isdigit(c)) {
-      return read_number(state, c);
+      value_t r = read_number(state, c);
+      assert(r != 0);
+      return r;
     }
     if (ismacro(c)) {
       return macros[(int)c](state, c);
@@ -330,7 +332,7 @@ value_t read_dispatch(readerstate_t *state, char tok) {
 }
 
 value_t read_number(readerstate_t *state, char tok) {
-  char *buf1, *buf2 = NULL, special = 0;
+  char *buf1 = NULL, *buf2 = NULL, special = 0;
   size_t i = 0, sz = 64;
   int c;
   u_int32_t base = 10;
@@ -377,8 +379,8 @@ value_t read_number(readerstate_t *state, char tok) {
     c = ios_getc(state->input);
     if (c == IOS_EOF || iswhitespace(c) || ismacro(c)) {
       value_t num = 0;
+      buf1[i] = '\0';
       if (buf2 != NULL) {
-        buf2[i] = '\0';
         if (special == '/') {
           num = mk_ratio(buf2, buf1);
         } else {
@@ -386,7 +388,6 @@ value_t read_number(readerstate_t *state, char tok) {
         }
         free(buf2);
       } else {
-        buf1[i] = '\0';
         if (special == '.' || special == 'e') {
           num = mk_decimal(buf1);
         } else {

@@ -64,9 +64,11 @@ typedef struct {
 
 value_t mk_ratio(char *n, char *d) {
   value_t v = mk_value(sizeof(ratio_t));
+  size_t ln = strlen(n);
+  size_t ld = strlen(d);
   typedvalue_type(v) = T_RATIO;
-  ratio_num(v) = strtoll(n, &n+strlen(n), 10);
-  ratio_den(v) = strtoll(d, &d+strlen(d), 10);
+  ratio_num(v) = strtoll(n, &n+ln, 10);
+  ratio_den(v) = strtoll(d, &d+ld, 10);
   return v;
 }
 
