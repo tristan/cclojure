@@ -14,7 +14,6 @@ default: $(EXENAME)
 
 $(EXENAME): $(LIBS)
 
-
 clean:
 	rm -f *~ *#
 	rm -f *.o

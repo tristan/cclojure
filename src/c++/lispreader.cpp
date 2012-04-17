@@ -2,7 +2,6 @@
 #include <string>
 #include <sstream>
 #include <functional>
-#include <cstdlib>
 #include "clojure.h"
 #include "lispreader.h"
 
@@ -45,7 +44,8 @@ object &read_number(std::istream &in) {
       } else if (c == 'x' || c == 'X') { // check if it's a hex value
         type = number_type::integer;
         base = 16;
-        start = "0" + (char)c;
+        start += "0";
+        start += (char)c;
         break;
       } else if (c >= '0' && c <= '7') { // check if it's an oct value
         type = number_type::integer;
@@ -55,7 +55,7 @@ object &read_number(std::istream &in) {
         break;
       } else {
         error = true;
-        buf << "O" << c;
+        buf << "O" << (char)c;
         break;
       }
     } else if (c == '-') { // add the sign to the buf if a -
@@ -71,7 +71,11 @@ object &read_number(std::istream &in) {
     c = in.get();
     if (isend(c)) {
       // TODO: process buf and get the value
+      in.unget(); // TODO: make sure we want to unget here
       if (error) {
+        std::cout << "Invalid Number: " << start << buf.str();
+      } else {
+        std::cout << "got number: " << buf.str() << " base: " << base;
       }
       return object::nil;
     }
@@ -83,11 +87,12 @@ object &read_number(std::istream &in) {
         buf.put(c);
       } else {
         std::string radix = buf.str();
+        buf.str("");
         if (radix.size() > 2) {
           error = true;
           buf.put(c);
         } else {
-          base = atol(radix.data());
+          base = stoi(radix);
           if (base > 36) {
             // TODO: NumberFormatException
             throw "Radix out of range";
@@ -101,16 +106,21 @@ object &read_number(std::istream &in) {
         error = true;
       } else {
         type = number_type::ratio;
-        // TODO: peek wont make in.eof() == true (or will it?)
-        // can we peek and check eof easily? something like std::eof returned by peek?
+        c = in.get();
+        if (isend(c)) {
+          error = true;
+          in.unget();
+        } else {
+          buf.put(c);
+        }
       }
     } else if (c == '.' && type == number_type::none) {
       type = number_type::decimal;
+      buf.put(c);
     } else if ((c == 'c' || c == 'E') && (type == number_type::none || type == number_type::decimal)) {
       type = number_type::scientific;
       buf.put(c);
       c = in.get();
-
       if (isend(c)) {
         error = true;
       } else {
@@ -120,7 +130,22 @@ object &read_number(std::istream &in) {
         }
       }
     } else if ((c == 'N' || c == 'M') && base == 10) { // M and N endings only possible with base 10
-      
+      c = in.get();
+      if (!isend(c)) {
+        error = true;
+        buf.put(c);
+      } else {
+        in.unget();
+      }
+    } else if (c >= '0' && ((base < 11 && (c < '0' + base)) || 
+                            (base > 10 && (c <= '9' || 
+                                           (c >= 'a' && c < 'a' + (base-10)) ||
+                                           (c >= 'A' && c < 'A' + (base-10))
+                                           )))) {
+      buf.put(c);
+    } else {
+      buf.put(c);
+      error = true;
     }
   }
   return object::nil;
