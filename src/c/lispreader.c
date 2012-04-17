@@ -346,7 +346,7 @@ value_t read_number(readerstate_t *state, char tok) {
         value_t rval = mk_integer("0", 10);
         free(buf1);
         return rval;
-      } else if (c == 'x') {
+      } else if (c == 'x' || c == 'X') {
         base = 16;
         special = 'x';
         break;
