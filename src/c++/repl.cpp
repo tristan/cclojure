@@ -8,7 +8,7 @@
 int cpp_repl(std::istream &in) {
   std::string ns = "user";
   lispreader reader;
-  obj eof_value = object::nil;
+  obj eof_value = std::make_shared<integer>(1L);
   while (1) {
     std::cout << ns << "=> ";
     try {
