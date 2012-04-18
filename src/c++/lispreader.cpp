@@ -22,7 +22,7 @@ enum class number_type : int {
   ratio
 };
 
-object &read_number(std::istream &in) {
+std::shared_ptr<object> read_number(std::istream &in) {
   std::stringstream buf;
   std::string start = "";
   bool error = false;
@@ -151,8 +151,8 @@ object &read_number(std::istream &in) {
   return object::nil;
 }
 
-object &lispreader::read(std::istream &in, bool eof_is_error, 
-                         object &eof_value, bool is_recursive) {
+std::shared_ptr<object> lispreader::read(std::istream &in, bool eof_is_error, 
+                                         std::shared_ptr<object> eof_value, bool is_recursive) {
 
   for (; ;) {
     int c;

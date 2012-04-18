@@ -3,7 +3,8 @@
 
 class lispreader {
  public:
-  object &read(std::istream &in, bool eof_is_error, object &eof_value, bool is_recursive);
+  std::shared_ptr<object> read(std::istream &in, bool eof_is_error, 
+                               std::shared_ptr<object> eof_value, bool is_recursive);
 };
 
 #endif

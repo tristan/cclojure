@@ -1,5 +1,4 @@
 #include <iostream>
-#include <string>
 #include "clojure.h"
 
 class nil_class : public object {
@@ -12,10 +11,10 @@ public:
   }
 };
 
-object object::nil = nil_class {};
+std::shared_ptr<object> object::nil = std::make_shared<nil_class>();
 
-std::ostream& operator<<(std::ostream& out, object& o) {
-  out << o.to_string();
+std::ostream& operator<<(std::ostream& out, std::shared_ptr<object> o) {
+  out << o.get()->to_string();
   return out;
 }
 
