@@ -5,12 +5,14 @@
 
 class object {
  public:
-  object(std::string symbol);
-  static object nil;
   bool operator==(const object &o2);
   friend std::ostream& operator<<(std::ostream& out, object& o);
- private:
-  std::string symbol;
+  virtual std::string to_string();
+
+  static object nil;
+ protected:
+  object() {}; // we shouldn't even instantiate an object
+  std::string java_type;
 };
 
 #endif

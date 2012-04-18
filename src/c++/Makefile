@@ -1,12 +1,12 @@
 CLJHOME=$(abspath ../..)
 #CXX=clang++
 CXX=g++
-CXXFLAGS=-std=c++11
+CXXFLAGS=-std=c++11 -g3 -fno-inline -O0
 CC=$(CXX)
 CFLAGS=$(CXXFLAGS)
 
 EXENAME=cclj
-SRCS = repl lispreader object cclj
+SRCS = object lispreader repl cclj
 LIBS = $(SRCS:%=%.o)
 
 default: $(EXENAME)
