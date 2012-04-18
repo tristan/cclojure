@@ -19,6 +19,8 @@ int cpp_repl(std::istream &in) {
       }
     } catch (std::string s) {
       std::cout << s << std::endl;
+    } catch (const char *s) {
+      std::cout << s << std::endl;
     }
   }
   std::cout << std::endl;

@@ -6,7 +6,7 @@ CC=$(CXX)
 CFLAGS=$(CXXFLAGS)
 
 EXENAME=cclj
-SRCS = object numbers lispreader repl cclj
+SRCS = object numbers utf8 lispreader repl cclj
 LIBS = $(SRCS:%=%.o)
 
 default: $(EXENAME)

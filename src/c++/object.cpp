@@ -27,7 +27,7 @@ string::string(std::string s) {
 }
 
 std::string string::to_string() {
-  return this->str;
+  return "\"" + this->str + "\"";
 }
 
 bool string::operator==(const object &o) {

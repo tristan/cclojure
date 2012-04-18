@@ -3,10 +3,111 @@
 #include <sstream>
 #include <functional>
 #include "clojure.h"
+#include "utf8.h"
 #include "lispreader.h"
 
 static inline bool iswhitespace(int c) {
   return std::isspace(c) || c == ',';
+}
+
+static inline int octal_digit(char c)
+{
+    return (c >= '0' && c <= '7');
+}
+
+static inline int hex_digit(char c)
+{
+    return ((c >= '0' && c <= '9') ||
+            (c >= 'A' && c <= 'F') ||
+            (c >= 'a' && c <= 'f'));
+}
+
+obj read_string(std::istream &in) {
+  std::stringstream buf;
+  std::function<int ()> getc = // lambda to get the next char, or throw EOF exception
+    [&in] () { 
+    int c = in.get();
+    if (in.eof()) {
+      throw "EOF while reading string";
+    }
+    return c;
+  };
+  while (1) {
+    int c = getc();
+    if (c == '"') {
+      return std::make_shared<string>(buf.str());
+    }
+    if (c == '\\') {
+      c = getc();
+      if (octal_digit(c)) {
+        int j = 0;
+        char eseq[4] = { 0, 0, 0, 0 } ;
+        do {
+          eseq[j++] = c;
+          c = getc();
+        } while (octal_digit(c) && j < 3);
+        in.unget();
+        if (!octal_digit(c) && j < 3) {
+          if (c == '\\') {
+          } else {
+            buf.str("Invalid digit: ");
+            buf.put(c);
+            throw buf.str();
+          }
+        }
+        u8_wc_toutf8(buf, std::strtol(eseq, 0, 8));
+      } else if (c == 'u') {
+        int j = 0;
+        char eseq[5] = { 0, 0, 0, 0, 0 };
+        c = getc();
+        while (hex_digit(c) && j < 4) {
+          eseq[j++] = c;
+          c = getc();
+        }
+        if (j != 4) {
+          buf.str("Invalid character length: ");
+          buf << j << ", should be: 4";
+          throw buf.str();
+        }
+        in.unget();
+        long uni = std::strtol(eseq, 0, 16);
+        u8_wc_toutf8(buf, uni);
+      } else {
+        if (c == 'b') {
+          buf.put('\b');
+        } else if (c == 'n') {
+          buf.put('\n');
+        } else if (c == 't') {
+          buf.put('\t');
+        } else if (c == 'f') {
+          buf.put('\f');
+        } else if (c == 'r') {
+          buf.put('\r');
+        } else if (c == '"') {
+          buf.put('\'');
+        } else if (c == '\\') {
+          buf.put('\\');
+        } else {
+          buf.str("Unsupported escape character: \\");
+          buf.put(c);
+          throw buf.str();
+        }
+      }
+    } else {
+      buf.put(c);
+    }
+  }
+  return object::nil;
+}
+
+using macro_fn = obj(*)(std::istream &);
+
+macro_fn getmacro(int c) {
+  if (c == '"') {
+    return read_string;
+  } else {
+    return 0;
+  }
 }
 
 bool isterminator(int c) {
@@ -186,6 +287,10 @@ obj lispreader::read(std::istream &in, bool eof_is_error,
       if (std::isdigit(c)) {
         in.unget();
         return read_number(in);
+      }
+      macro_fn fn = getmacro(c);
+      if (fn != 0) {
+        return fn(in);
       }
       throw "not yet supported";
     }
