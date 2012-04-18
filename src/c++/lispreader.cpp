@@ -17,12 +17,12 @@ bool isterminator(int c) {
 enum class number_type : int {
   none,
   integer,
-  decimal, // float is a keyword!
+  irrational,
   scientific,
   ratio
 };
 
-std::shared_ptr<object> read_number(std::istream &in) {
+obj read_number(std::istream &in) {
   std::stringstream buf;
   std::string start = "";
   bool error = false;
@@ -53,6 +53,11 @@ std::shared_ptr<object> read_number(std::istream &in) {
         base = 8;
         start = "0";
         break;
+      } else if (c == 'e' || c == 'E') {
+        type = number_type::scientific;
+        buf.put('0');
+        buf.put(c);
+        break;
       } else {
         error = true;
         buf << "O" << (char)c;
@@ -73,11 +78,20 @@ std::shared_ptr<object> read_number(std::istream &in) {
       // TODO: process buf and get the value
       in.unget(); // TODO: make sure we want to unget here
       if (error) {
-        std::cout << "Invalid Number: " << start << buf.str();
+        buf.str("Invalid Number: " + start + buf.str());
+        throw buf.str();
       } else {
-        std::cout << "got number: " << buf.str() << " base: " << base;
+        if (type == number_type::integer || type == number_type::none) {
+          return std::make_shared<integer>(buf.str(), base);
+        } else if (type == number_type::irrational || type == number_type::scientific) {
+          return std::make_shared<irrational>(buf.str());
+        } else if (type == number_type::ratio) {
+          std::string r = buf.str();
+          size_t s = r.find('/');
+          return std::make_shared<ratio>(r.substr(0, s), r.substr(s+1));
+        }
       }
-      return object::nil;
+      return object::nil; // should never get here
     }
     if (error) {
       buf.put(c);
@@ -115,9 +129,10 @@ std::shared_ptr<object> read_number(std::istream &in) {
         }
       }
     } else if (c == '.' && type == number_type::none) {
-      type = number_type::decimal;
+      type = number_type::irrational;
       buf.put(c);
-    } else if ((c == 'c' || c == 'E') && (type == number_type::none || type == number_type::decimal)) {
+    } else if ((c == 'e' || c == 'E') && 
+               (type == number_type::none || type == number_type::irrational)) {
       type = number_type::scientific;
       buf.put(c);
       c = in.get();
@@ -151,8 +166,8 @@ std::shared_ptr<object> read_number(std::istream &in) {
   return object::nil;
 }
 
-std::shared_ptr<object> lispreader::read(std::istream &in, bool eof_is_error, 
-                                         std::shared_ptr<object> eof_value, bool is_recursive) {
+obj lispreader::read(std::istream &in, bool eof_is_error, 
+                     obj eof_value, bool is_recursive) {
 
   for (; ;) {
     int c;

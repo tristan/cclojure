@@ -1,28 +1,49 @@
 #include <iostream>
 #include "clojure.h"
 
-class nil_class : public object {
-public:
-  nil_class() {
-    this->java_type = "null";
-  }
-  std::string to_string() override {
-    return "nil";
-  }
-};
+obj object::nil = nullptr;
 
-std::shared_ptr<object> object::nil = std::make_shared<nil_class>();
-
-std::ostream& operator<<(std::ostream& out, std::shared_ptr<object> o) {
-  out << o.get()->to_string();
+std::ostream& operator<<(std::ostream& out, obj o) {
+  if (o == nullptr) {
+    out << "nil";
+  } else {
+    out << o->to_string();
+  }
   return out;
 }
 
 std::string object::to_string() {
-  return "#<" + this->java_type + ">";
+  return "#<unknown object>";
 }
 
-bool object::operator==(const object &o2) {
+bool object::operator==(const object &o) {
   // objects themselves are only considered equal if they have the same address
-  return (this == &o2);
+  std::cout << "object==\n";
+  return (this == &o);
+}
+
+string::string(std::string s) {
+  this->str = s;
+}
+
+std::string string::to_string() {
+  return this->str;
+}
+
+bool string::operator==(const object &o) {
+  std::cout << "string==\n";
+  const string &s = dynamic_cast<const string&>(o);
+  return this->str == s.str;
+}
+
+bool operator==(obj o1, obj o2) {
+  std::cout << "shared==\n";
+  if (o1 == nullptr && o2 == nullptr) {
+    return true;
+  } else if (o1 == nullptr || o2 == nullptr) {
+    return false;
+  } else if (o1.get() == o2.get()) {
+    return true;
+  }
+  return *o1 == *o2;
 }

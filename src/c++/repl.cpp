@@ -8,15 +8,17 @@
 int cpp_repl(std::istream &in) {
   std::string ns = "user";
   lispreader reader;
-  auto eof_value = object::nil;
+  obj eof_value = object::nil;
   while (1) {
     std::cout << ns << "=> ";
-    auto o = reader.read(in, false, eof_value, false);
-    std::cout << std::endl << o << std::endl;
-    if (o == eof_value) {
-      return 0;
-    } else {
-      return 0;
+    try {
+      auto o = reader.read(in, false, eof_value, false);
+      std::cout << o << std::endl;
+      if (o == eof_value) {
+        return 0;
+      }
+    } catch (std::string s) {
+      std::cout << s << std::endl;
     }
   }
   std::cout << std::endl;
