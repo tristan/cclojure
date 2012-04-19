@@ -6,17 +6,19 @@
 #include "lispreader.h"
 
 int cpp_repl(std::istream &in) {
-  std::string ns = "user";
+  auto ns = Namespace::findOrCreate(symbol::create( "user" ));
   lispreader reader;
-  obj eof_value = std::make_shared<integer>(1L);
+  obj eof_value = std::make_shared<integer>(-1L);
+  std::cout << "Clojure c++ 1.0a" << std::endl;
   while (1) {
-    std::cout << ns << "=> ";
+    std::cout << ns->get_name() << "=> ";
     try {
       auto o = reader.read(in, false, eof_value, false);
-      std::cout << o << std::endl;
       if (o == eof_value) {
+        std::cout << std::endl;
         return 0;
       }
+      std::cout << o << std::endl;
     } catch (std::string s) {
       std::cout << s << std::endl;
     } catch (const char *s) {

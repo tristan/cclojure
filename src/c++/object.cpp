@@ -2,6 +2,8 @@
 #include "clojure.h"
 
 obj object::nil = nullptr;
+obj object::T = std::make_shared<boolean>(true);
+obj object::F = std::make_shared<boolean>(false);
 
 std::ostream& operator<<(std::ostream& out, obj o) {
   if (o == nullptr) {
@@ -31,7 +33,6 @@ std::string string::to_string() {
 }
 
 bool string::operator==(const object &o) {
-  std::cout << "string==\n";
   try {
     const string &s = dynamic_cast<const string&>(o);
     return this->str == s.str;
@@ -45,8 +46,25 @@ bool string::operator==(const object &o) {
   }
 }
 
+boolean::boolean(bool b) {
+  this->value = b;
+}
+
+std::string boolean::to_string() {
+  return this->value ? "true" : "false";
+}
+
+bool boolean::operator==(const object &o) {
+  try {
+    const boolean &b = dynamic_cast<const boolean&>(o);
+    return this->value == b.value;
+  } catch (std::bad_cast &e) {
+    // TODO: same as string::operator==
+    return false;
+  }
+}
+
 bool operator==(obj o1, obj o2) {
-  std::cout << "shared==\n";
   if (o1 == nullptr && o2 == nullptr) {
     return true;
   } else if (o1 == nullptr || o2 == nullptr) {

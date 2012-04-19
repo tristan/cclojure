@@ -267,6 +267,31 @@ obj read_number(std::istream &in) {
   return object::nil;
 }
 
+obj read_token(std::istream &in) {
+  std::stringstream buf;
+  for (; ;) {
+    int c = in.get();
+    if (in.eof() || iswhitespace(c) || (c != '#' && getmacro(c) != 0)) {
+      break;
+    }
+    buf.put(c);
+  }
+  std::string token = buf.str();
+  // interpret token
+  if (token == "nil") {
+    return object::nil;
+  } else if (token == "true") {
+    return object::T;
+  } else if (token == "false") {
+    return object::F;
+  }
+  // TODO: / = slash, clojure.core// = slash
+  
+  // TODO: match symbol
+
+  throw "Invalid token: " + token;
+}
+
 obj lispreader::read(std::istream &in, bool eof_is_error, 
                      obj eof_value, bool is_recursive) {
 
@@ -292,6 +317,8 @@ obj lispreader::read(std::istream &in, bool eof_is_error,
       if (fn != 0) {
         return fn(in);
       }
+      in.unget();
+      return read_token(in);
       throw "not yet supported";
     }
   }
