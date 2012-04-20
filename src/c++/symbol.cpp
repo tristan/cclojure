@@ -39,6 +39,52 @@ symbol::symbol(std::string ns, std::string name) {
   this->hash = ns_hash ^ name_hash + 0x9e3779b9 + (ns_hash << 6) + (ns_hash >> 2);
 }
 
+bool symbol::operator==(const object& o) {
+  try {
+    const symbol &s = dynamic_cast<const symbol&>(o);
+    return this->name == s.name && this->ns == s.ns;
+  } catch (std::bad_cast &e) {
+    // TODO: same as string::operator==
+    return false;
+  }
+}
+
+int compare(const symbol& s1, const symbol& s2) {
+  if (s1.ns == "" && s2.ns != "") {
+    return -1;
+  }
+  if (s1.ns != "") {
+    if (s2.ns == "") {
+      return 1;
+    }
+    if (s1.ns < s2.ns) {
+      return -1;
+    }
+    if (s1.ns > s2.ns) {
+      return 1;
+    }
+  }
+  if (s1.name < s2.name) {
+    return -1;
+  }
+  if (s1.name > s2.name) {
+    return 1;
+  }
+  return 0;
+}
+
+bool symbol::operator==(const symbol& o) const {
+  return compare(*this, o) == 0;
+}
+
+bool symbol::operator<(const symbol& o) const {
+  return compare(*this, o) < 0;
+}
+
+bool symbol::operator>(const symbol& o) const {
+  return compare(*this, o) > 0;
+}
+
 std::ostream& operator<<(std::ostream& out, std::shared_ptr<symbol> o) {
   if (o == nullptr) {
     out << object::nil;

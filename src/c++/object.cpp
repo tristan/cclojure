@@ -20,7 +20,7 @@ std::string object::to_string() {
 
 bool object::operator==(const object &o) {
   // objects themselves are only considered equal if they have the same address
-  std::cout << "object==\n";
+  std::cout << "(object==) ";
   return (this == &o);
 }
 
@@ -65,6 +65,7 @@ bool boolean::operator==(const object &o) {
 }
 
 bool operator==(obj o1, obj o2) {
+  std::cout << "(obj==obj) ";
   if (o1 == nullptr && o2 == nullptr) {
     return true;
   } else if (o1 == nullptr || o2 == nullptr) {

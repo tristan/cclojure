@@ -52,6 +52,11 @@ public:
   static std::shared_ptr<symbol> create(std::string name);
   static std::shared_ptr<symbol> create(std::string ns, std::string name);
   std::string get_name();
+  bool operator==(const object& o) override;
+  bool operator==(const symbol& o) const;
+  bool operator<(const symbol& o) const;
+  bool operator>(const symbol& o) const;
+  friend int compare(const symbol& s1, const symbol& s2);
   friend std::ostream& operator<<(std::ostream& out, std::shared_ptr<symbol> o);
   friend class keyword;
 protected:
@@ -72,7 +77,7 @@ public:
 protected:
   std::string to_string() override;
 private:
-  static std::map<std::shared_ptr<symbol>,std::shared_ptr<keyword>> table;
+  // static std::map<std::shared_ptr<symbol>,std::shared_ptr<keyword>> table;
   std::shared_ptr<symbol> sym;
   size_t hash;
   keyword(std::shared_ptr<symbol> name);

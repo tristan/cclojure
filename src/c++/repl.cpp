@@ -19,7 +19,7 @@ int cpp_repl(std::istream &in) {
         return 0;
       }
       // TODO: eval before print (Compiler.java:5389)
-      std::cout << o << std::endl;
+      std::cout << o << " (" << std::hex << o.get() << ")" << std::endl;
     } catch (std::string s) {
       std::cout << s << std::endl;
     } catch (const char *s) {
