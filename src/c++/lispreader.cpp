@@ -22,7 +22,7 @@ static inline int hex_digit(char c)
             (c >= 'a' && c <= 'f'));
 }
 
-obj read_string(std::istream &in) {
+std::shared_ptr<object> read_string(std::istream &in) {
   std::stringstream buf;
   std::function<int ()> getc = // lambda to get the next char, or throw EOF exception
     [&in] () { 
@@ -100,7 +100,7 @@ obj read_string(std::istream &in) {
   return object::nil;
 }
 
-using macro_fn = obj(*)(std::istream &);
+using macro_fn = std::shared_ptr<object>(*)(std::istream &);
 
 macro_fn getmacro(int c) {
   if (c == '"') {
@@ -123,7 +123,7 @@ enum class number_type : int {
   ratio
 };
 
-obj read_number(std::istream &in) {
+std::shared_ptr<object> read_number(std::istream &in) {
   std::stringstream buf;
   std::string start = "";
   bool error = false;
@@ -267,7 +267,7 @@ obj read_number(std::istream &in) {
   return object::nil;
 }
 
-obj read_token(std::istream &in) {
+std::shared_ptr<object> read_token(std::istream &in) {
   std::stringstream buf;
   std::string ns = "";
   for (; ;) {
@@ -314,8 +314,8 @@ obj read_token(std::istream &in) {
   return sym;
 }
 
-obj lispreader::read(std::istream &in, bool eof_is_error, 
-                     obj eof_value, bool is_recursive) {
+std::shared_ptr<object> lispreader::read(std::istream &in, bool eof_is_error, 
+                     std::shared_ptr<object> eof_value, bool is_recursive) {
 
   for (; ;) {
     int c;

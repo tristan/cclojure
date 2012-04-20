@@ -3,7 +3,7 @@
 #include "clojure.h"
 
 // TODO: concurrency
-std::map<symbol,std::shared_ptr<keyword>> table;
+static std::map<symbol,std::shared_ptr<keyword>> table;
 
 std::shared_ptr<keyword> keyword::create(std::string name) {
   return keyword::create(symbol::create(name));

@@ -39,7 +39,7 @@ symbol::symbol(std::string ns, std::string name) {
   this->hash = ns_hash ^ name_hash + 0x9e3779b9 + (ns_hash << 6) + (ns_hash >> 2);
 }
 
-bool symbol::operator==(const object& o) {
+bool symbol::operator==(const object& o) const {
   try {
     const symbol &s = dynamic_cast<const symbol&>(o);
     return this->name == s.name && this->ns == s.ns;

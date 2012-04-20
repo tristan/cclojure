@@ -1,11 +1,11 @@
 #include <iostream>
 #include "clojure.h"
 
-obj object::nil = nullptr;
-obj object::T = std::make_shared<boolean>(true);
-obj object::F = std::make_shared<boolean>(false);
+std::shared_ptr<object> object::nil = nullptr;
+std::shared_ptr<object> object::T = std::make_shared<boolean>(true);
+std::shared_ptr<object> object::F = std::make_shared<boolean>(false);
 
-std::ostream& operator<<(std::ostream& out, obj o) {
+std::ostream& operator<<(std::ostream& out, std::shared_ptr<object> o) {
   if (o == nullptr) {
     out << "nil";
   } else {
@@ -18,7 +18,7 @@ std::string object::to_string() {
   return "#<unknown object>";
 }
 
-bool object::operator==(const object &o) {
+bool object::operator==(const object &o) const {
   // objects themselves are only considered equal if they have the same address
   std::cout << "(object==) ";
   return (this == &o);
@@ -32,7 +32,7 @@ std::string string::to_string() {
   return "\"" + this->str + "\"";
 }
 
-bool string::operator==(const object &o) {
+bool string::operator==(const object &o) const {
   try {
     const string &s = dynamic_cast<const string&>(o);
     return this->str == s.str;
@@ -54,7 +54,7 @@ std::string boolean::to_string() {
   return this->value ? "true" : "false";
 }
 
-bool boolean::operator==(const object &o) {
+bool boolean::operator==(const object &o) const {
   try {
     const boolean &b = dynamic_cast<const boolean&>(o);
     return this->value == b.value;
@@ -64,7 +64,7 @@ bool boolean::operator==(const object &o) {
   }
 }
 
-bool operator==(obj o1, obj o2) {
+bool operator==(std::shared_ptr<object> o1, std::shared_ptr<object> o2) {
   std::cout << "(obj==obj) ";
   if (o1 == nullptr && o2 == nullptr) {
     return true;

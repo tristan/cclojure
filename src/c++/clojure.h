@@ -8,17 +8,15 @@
 
 class object;
 
-using obj = std::shared_ptr<object>;
-
 // base object class
 class object {
 public:
-  static obj nil;
-  static obj T;
-  static obj F;
+  static std::shared_ptr<object> nil;
+  static std::shared_ptr<object> T;
+  static std::shared_ptr<object> F;
 
-  friend std::ostream& operator<<(std::ostream& out, obj o);
-  virtual bool operator==(const object& o);
+  friend std::ostream& operator<<(std::ostream& out, std::shared_ptr<object> o);
+  virtual bool operator==(const object& o) const;
 protected:
   object() {}; // we shouldn't even instantiate an object
 
@@ -30,7 +28,7 @@ protected:
 class string : public object {
 public:
   string(std::string s);
-  bool operator==(const object &o) override;
+  bool operator==(const object &o) const override;
 protected:
   std::string str;
   std::string to_string() override;
@@ -40,7 +38,7 @@ protected:
 class boolean : public object {
 public:
   boolean(bool b);
-  bool operator==(const object& o) override;
+  bool operator==(const object& o) const override;
   std::string to_string() override;
 protected:
   bool value;
@@ -52,7 +50,7 @@ public:
   static std::shared_ptr<symbol> create(std::string name);
   static std::shared_ptr<symbol> create(std::string ns, std::string name);
   std::string get_name();
-  bool operator==(const object& o) override;
+  bool operator==(const object& o) const override;
   bool operator==(const symbol& o) const;
   bool operator<(const symbol& o) const;
   bool operator>(const symbol& o) const;
@@ -77,7 +75,6 @@ public:
 protected:
   std::string to_string() override;
 private:
-  // static std::map<std::shared_ptr<symbol>,std::shared_ptr<keyword>> table;
   std::shared_ptr<symbol> sym;
   size_t hash;
   keyword(std::shared_ptr<symbol> name);
@@ -105,7 +102,7 @@ private:
 
 #include "seqs.h"
 
-bool operator==(obj o1, obj o2);
+bool operator==(std::shared_ptr<object> o1, std::shared_ptr<object> o2);
 
 template<typename T, typename ...Args>
 std::unique_ptr<T> make_unique( Args&& ...args )
