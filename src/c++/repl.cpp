@@ -18,6 +18,7 @@ int cpp_repl(std::istream &in) {
         std::cout << std::endl;
         return 0;
       }
+      // TODO: eval before print (Compiler.java:5389)
       std::cout << o << std::endl;
     } catch (std::string s) {
       std::cout << s << std::endl;

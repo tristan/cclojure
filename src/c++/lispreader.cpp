@@ -269,27 +269,49 @@ obj read_number(std::istream &in) {
 
 obj read_token(std::istream &in) {
   std::stringstream buf;
+  std::string ns = "";
   for (; ;) {
     int c = in.get();
     if (in.eof() || iswhitespace(c) || (c != '#' && getmacro(c) != 0)) {
       break;
     }
     buf.put(c);
+    if (c == '/') {
+      ns = buf.str();
+    }
   }
-  std::string token = buf.str();
-  // interpret token
-  if (token == "nil") {
+  std::string s = buf.str();
+  if (s.back() == '/') {
+    // TODO: this is the only case i can spot where we have an invalid token
+    throw "Invalid token: " + s;
+  }
+  if (s == "nil") {
     return object::nil;
-  } else if (token == "true") {
+  }
+  if (s == "true") {
     return object::T;
-  } else if (token == "false") {
+  }
+  if (s == "false") {
     return object::F;
   }
   // TODO: / = slash, clojure.core// = slash
-  
-  // TODO: match symbol
-
-  throw "Invalid token: " + token;
+  if (ns != "" && ns.substr(ns.size()-3) == ":/"
+      || s.back() == ':'
+      || s.find("::", 1) != std::string::npos) {
+    return nullptr;
+  }
+  if (s[0] == ':' && s[1] == ':') {
+    auto ks = symbol::create(s.substr(2));
+    // TODO: handle namespace qualified keywords
+    return nullptr;
+  }
+  bool iskey = s[0] == ':';
+  // TODO: do we need intern?
+  auto sym = symbol::create(iskey ? s.substr(1) : s);
+  if (iskey) {
+    return keyword::create(sym);
+  }
+  return sym;
 }
 
 obj lispreader::read(std::istream &in, bool eof_is_error, 

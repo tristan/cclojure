@@ -2,7 +2,13 @@
 #include "clojure.h"
 
 std::shared_ptr<symbol> symbol::create(std::string name) {
-  return std::shared_ptr<symbol>( new symbol("", name) );
+  size_t slashpos = name.rfind("/");
+  std::string ns = "";
+  if (slashpos != std::string::npos) {
+    ns = name.substr(0, slashpos-1);
+    name = name.substr(slashpos+1);
+  }
+  return std::shared_ptr<symbol>( new symbol(ns, name) );
 }
 
 std::shared_ptr<symbol> symbol::create(std::string ns, std::string name) {

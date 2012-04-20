@@ -53,6 +53,7 @@ public:
   static std::shared_ptr<symbol> create(std::string ns, std::string name);
   std::string get_name();
   friend std::ostream& operator<<(std::ostream& out, std::shared_ptr<symbol> o);
+  friend class keyword;
 protected:
   std::string ns;
   std::string name;
@@ -60,6 +61,21 @@ protected:
 
   symbol(std::string ns, std::string name);
   std::string to_string() override;
+};
+
+// keyword class
+class keyword : public object {
+public:
+  static std::shared_ptr<keyword> create(std::shared_ptr<symbol> name);
+  static std::shared_ptr<keyword> create(std::string name);
+  static std::shared_ptr<keyword> create(std::string ns, std::string name);
+protected:
+  std::string to_string() override;
+private:
+  static std::map<std::shared_ptr<symbol>,std::shared_ptr<keyword>> table;
+  std::shared_ptr<symbol> sym;
+  size_t hash;
+  keyword(std::shared_ptr<symbol> name);
 };
 
 // namespace class
@@ -81,6 +97,8 @@ private:
 };
 
 #include "numbers.h"
+
+#include "seqs.h"
 
 bool operator==(obj o1, obj o2);
 
