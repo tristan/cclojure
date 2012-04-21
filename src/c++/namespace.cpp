@@ -24,6 +24,6 @@ std::shared_ptr<symbol> Namespace::get_name() {
   return this->name;
 }
 
-std::string Namespace::to_string() {
-  return "#<Namespace " + name->get_name() + " >#";
+std::string Namespace::to_string() const {
+  return name->get_name();
 }

@@ -5,16 +5,16 @@
 #include <algorithm>
 #include "clojure.h"
 
-std::string number::to_string() {
+/*std::string number::to_string() const {
   return "#<number object>";
-}
+  }*/
 
-integer::integer(std::string i) {
+integer::integer(const std::string &i) {
   // TODO: support larger ints
   this->value = std::stoll(i);
 }
 
-integer::integer(std::string i, int base) {
+integer::integer(const std::string &i, int base) {
   // TODO: support larger ints
   this->value = std::stoll(i, 0, base);
 }
@@ -23,14 +23,14 @@ integer::integer(long long i) {
   this->value = i;
 }
 
-std::string integer::to_string() {
+std::string integer::to_string() const {
   // TODO: it may be quicker to use sprintf here
   std::stringstream sstm;
   sstm << value;
   return sstm.str();
 }
 
-irrational::irrational(std::string i) {
+irrational::irrational(const std::string &i) {
   this->value = std::stod(i);
   /* TODO: the output of doubles is different from clojure
      perhaps this matters
@@ -59,7 +59,7 @@ irrational::irrational(double i) {
   this->value = i;
 }
 
-std::string irrational::to_string() {
+std::string irrational::to_string() const {
   // TODO: it may be quicker to use sprintf here
   std::stringstream sstm;
   if (precision > 0) {
@@ -71,7 +71,7 @@ std::string irrational::to_string() {
   return sstm.str();
 }
 
-ratio::ratio(std::string num, std::string den) {
+ratio::ratio(const std::string &num, const std::string &den) {
   this->num = make_unique<integer>(num);
   this->den = make_unique<integer>(den);
 }
@@ -81,12 +81,12 @@ ratio::ratio(long long num, long long den) {
   this->den = make_unique<integer>(den);
 }
 
-ratio::ratio(integer &num, integer &den) {
+ratio::ratio(const integer &num, const integer &den) {
   this->num = make_unique<integer>(num);
   this->den = make_unique<integer>(den);
 }
 
-std::string ratio::to_string() {
+std::string ratio::to_string() const {
   std::stringstream sstm;
   sstm << num->to_string() << "/" << den->to_string();
   return sstm.str();

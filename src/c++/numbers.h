@@ -2,40 +2,43 @@
 #define _NUMBERS_H
 
 class number : public object {
-protected:
-  std::string to_string() override;
+  //std::string to_string() const override;
 };
 
 class integer : public number {
 public:
-  integer(std::string i);
-  integer(std::string i, int base);
+  integer(const std::string &i);
+  integer(const std::string &i, int base);
   integer(long long i);
+
+  std::string to_string() const override;
+
   friend class ratio;
-protected:
+private:
   long long value;
-  std::string to_string() override;
 };
 
 class irrational : public number {
 public:
-  irrational(std::string i);
+  irrational(const std::string &i);
   irrational(double i);
-protected:
+
+  std::string to_string() const override;
+private:
   double value;
   int precision = -1;
-  std::string to_string() override;
 };
 
 class ratio : public number {
 public:
-  ratio(std::string num, std::string den);
+  ratio(const std::string &num, const std::string &den);
   ratio(long long num, long long den);
-  ratio(integer &num, integer &den);
-protected:
+  ratio(const integer &num, const integer &den);
+
+  std::string to_string() const override;
+private:
   std::unique_ptr<integer> num;
   std::unique_ptr<integer> den;
-  std::string to_string() override;
 };
 
 #endif

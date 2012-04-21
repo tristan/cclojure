@@ -27,14 +27,19 @@ std::shared_ptr<keyword> keyword::create(const symbol& sym) {
   return kw;
 }
 
-std::string keyword::to_string() {
+std::string keyword::to_string() const {
   return ":" + sym.to_string();
 }
 
+size_t keyword::hash_code() const {
+  return hash;
+}
+
+// initialise needed because there's no default constructor
+// for symbol thus this->sym can't be initialized
 keyword::keyword(const symbol& sym) : sym(sym) {
   // TODO: experiment: do i need to specifically copy here
   // or does non-const = const& automatically fire the copy constructor?
   // explicitly implement the copy and see if it gets called normally
-  //this->sym = symbol(sym);
   hash = this->sym.hash + 0x9e3779b9;
 }

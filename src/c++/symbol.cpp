@@ -27,12 +27,16 @@ std::string symbol::get_name() {
   return name;
 }
 
-std::string symbol::to_string() {
+std::string symbol::to_string() const {
   if (ns != "") {
     return ns + "/" + name;
   } else {
     return name;
   }
+}
+
+size_t symbol::hash_code() const {
+  return hash;
 }
 
 symbol::symbol(const std::string &name) {
@@ -112,6 +116,7 @@ bool symbol::operator>(const symbol& o) const {
   return compare(*this, o) > 0;
 }
 
+/*
 std::ostream& operator<<(std::ostream& out, std::shared_ptr<symbol> o) {
   if (o == nullptr) {
     out << object::nil;
@@ -120,3 +125,4 @@ std::ostream& operator<<(std::ostream& out, std::shared_ptr<symbol> o) {
   }
   return out;
 }
+*/
