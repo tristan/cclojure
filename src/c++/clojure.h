@@ -20,20 +20,20 @@ std::unique_ptr<T> make_unique( Args&& ...args )
 // http://www.boost.org/doc/libs/1_40_0/boost/any.hpp
 
 // base object class
-class object {
+class Object {
 public:
-  static std::shared_ptr<object> nil;
-  static std::shared_ptr<object> T;
-  static std::shared_ptr<object> F;
+  static std::shared_ptr<Object> nil;
+  static std::shared_ptr<Object> T;
+  static std::shared_ptr<Object> F;
 
-  virtual std::string to_string() const = 0;
-  // TODO: make this = 0 and implement it for every object type
-  virtual size_t hash_code() const { return 0; }
+  virtual std::string toString() const = 0;
+  // TODO: make this = 0 and implement it for every Object type
+  virtual size_t hashCode() const { return 0; }
 
-  friend std::ostream& operator<<(std::ostream& out, const object& o);
-  virtual bool operator==(const object& o) const;
+  friend std::ostream& operator<<(std::ostream& out, const Object& o);
+  virtual bool operator==(const Object& o) const;
 protected:
-  object() {};
+  Object() {};
 };
 
 #include "boolean.h"

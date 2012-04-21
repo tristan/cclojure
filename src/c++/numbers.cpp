@@ -5,32 +5,32 @@
 #include <algorithm>
 #include "clojure.h"
 
-/*std::string number::to_string() const {
-  return "#<number object>";
+/*std::string Number::toString() const {
+  return "#<Number Object>";
   }*/
 
-integer::integer(const std::string &i) {
+Integer::Integer(const std::string &i) {
   // TODO: support larger ints
   this->value = std::stoll(i);
 }
 
-integer::integer(const std::string &i, int base) {
+Integer::Integer(const std::string &i, int base) {
   // TODO: support larger ints
   this->value = std::stoll(i, 0, base);
 }
 
-integer::integer(long long i) {
+Integer::Integer(long long i) {
   this->value = i;
 }
 
-std::string integer::to_string() const {
+std::string Integer::toString() const {
   // TODO: it may be quicker to use sprintf here
   std::stringstream sstm;
   sstm << value;
   return sstm.str();
 }
 
-irrational::irrational(const std::string &i) {
+Irrational::Irrational(const std::string &i) {
   this->value = std::stod(i);
   /* TODO: the output of doubles is different from clojure
      perhaps this matters
@@ -55,11 +55,11 @@ irrational::irrational(const std::string &i) {
   */
 }
 
-irrational::irrational(double i) {
+Irrational::Irrational(double i) {
   this->value = i;
 }
 
-std::string irrational::to_string() const {
+std::string Irrational::toString() const {
   // TODO: it may be quicker to use sprintf here
   std::stringstream sstm;
   if (precision > 0) {
@@ -71,23 +71,23 @@ std::string irrational::to_string() const {
   return sstm.str();
 }
 
-ratio::ratio(const std::string &num, const std::string &den) {
-  this->num = make_unique<integer>(num);
-  this->den = make_unique<integer>(den);
+Ratio::Ratio(const std::string &num, const std::string &den) {
+  this->num = make_unique<Integer>(num);
+  this->den = make_unique<Integer>(den);
 }
 
-ratio::ratio(long long num, long long den) {
-  this->num = make_unique<integer>(num);
-  this->den = make_unique<integer>(den);
+Ratio::Ratio(long long num, long long den) {
+  this->num = make_unique<Integer>(num);
+  this->den = make_unique<Integer>(den);
 }
 
-ratio::ratio(const integer &num, const integer &den) {
-  this->num = make_unique<integer>(num);
-  this->den = make_unique<integer>(den);
+Ratio::Ratio(const Integer &num, const Integer &den) {
+  this->num = make_unique<Integer>(num);
+  this->den = make_unique<Integer>(den);
 }
 
-std::string ratio::to_string() const {
+std::string Ratio::toString() const {
   std::stringstream sstm;
-  sstm << num->to_string() << "/" << den->to_string();
+  sstm << num->toString() << "/" << den->toString();
   return sstm.str();
 }

@@ -22,7 +22,7 @@ static inline int hex_digit(char c)
             (c >= 'a' && c <= 'f'));
 }
 
-std::shared_ptr<object> read_string(std::istream &in) {
+std::shared_ptr<Object> read_string(std::istream &in) {
   std::stringstream buf;
   // lambda to get the next char, or throw EOF exception
   std::function<int ()> getc = [&in] () -> int { 
@@ -35,7 +35,7 @@ std::shared_ptr<object> read_string(std::istream &in) {
   while (1) {
     int c = getc();
     if (c == '"') {
-      return std::make_shared<string>(buf.str());
+      return std::make_shared<String>(buf.str());
     }
     if (c == '\\') {
       c = getc();
@@ -97,14 +97,20 @@ std::shared_ptr<object> read_string(std::istream &in) {
       buf.put(c);
     }
   }
-  return object::nil;
+  return Object::nil;
 }
 
-using macro_fn = std::shared_ptr<object>(*)(std::istream &);
+std::shared_ptr<Object> read_list(std::istream &in) {
+  return Object::nil;
+}
+
+using macro_fn = std::shared_ptr<Object>(*)(std::istream &);
 
 macro_fn getmacro(int c) {
   if (c == '"') {
     return read_string;
+  } else if (c == '(') {
+    return read_list;
   } else {
     return 0;
   }
@@ -123,7 +129,7 @@ enum class number_type : int {
   ratio
 };
 
-std::shared_ptr<object> read_number(std::istream &in) {
+std::shared_ptr<Object> read_number(std::istream &in) {
   std::stringstream buf;
   std::string start = "";
   bool error = false;
@@ -185,16 +191,16 @@ std::shared_ptr<object> read_number(std::istream &in) {
         throw buf.str();
       } else {
         if (type == number_type::integer || type == number_type::none) {
-          return std::make_shared<integer>(buf.str(), base);
+          return std::make_shared<Integer>(buf.str(), base);
         } else if (type == number_type::irrational || type == number_type::scientific) {
-          return std::make_shared<irrational>(buf.str());
+          return std::make_shared<Irrational>(buf.str());
         } else if (type == number_type::ratio) {
           std::string r = buf.str();
           size_t s = r.find('/');
-          return std::make_shared<ratio>(r.substr(0, s), r.substr(s+1));
+          return std::make_shared<Ratio>(r.substr(0, s), r.substr(s+1));
         }
       }
-      return object::nil; // should never get here
+      return Object::nil; // should never get here
     }
     if (error) {
       buf.put(c);
@@ -266,10 +272,10 @@ std::shared_ptr<object> read_number(std::istream &in) {
       error = true;
     }
   }
-  return object::nil;
+  return Object::nil;
 }
 
-std::shared_ptr<object> read_token(std::istream &in) {
+std::shared_ptr<Object> read_token(std::istream &in) {
   std::stringstream buf;
   std::string ns = "";
   for (; ;) {
@@ -288,13 +294,13 @@ std::shared_ptr<object> read_token(std::istream &in) {
     throw "Invalid token: " + s;
   }
   if (s == "nil") {
-    return object::nil;
+    return Object::nil;
   }
   if (s == "true") {
-    return object::T;
+    return Object::T;
   }
   if (s == "false") {
-    return object::F;
+    return Object::F;
   }
   // TODO: / = slash, clojure.core// = slash
   if ((ns != "" && ns.substr(ns.size()-3) == ":/")
@@ -303,19 +309,19 @@ std::shared_ptr<object> read_token(std::istream &in) {
     return nullptr;
   }
   if (s[0] == ':' && s[1] == ':') {
-    auto ks = symbol::create(s.substr(2));
-    // TODO: handle namespace qualified keywords
+    auto ks = Symbol::create(s.substr(2));
+    // TODO: handle namespace qualified Keywords
     return nullptr;
   }
   bool iskey = s[0] == ':';
   if (iskey) {
-    return keyword::create(s.substr(1));
+    return Keyword::create(s.substr(1));
   }
-  return std::make_shared<symbol>(s);
+  return std::make_shared<Symbol>(s);
 }
 
-std::shared_ptr<object> lispreader::read(std::istream &in, bool eof_is_error, 
-                     std::shared_ptr<object> eof_value, bool is_recursive) {
+std::shared_ptr<Object> LispReader::read(std::istream &in, bool eof_is_error, 
+                     std::shared_ptr<Object> eof_value, bool is_recursive) {
 
   for (; ;) {
     int c;

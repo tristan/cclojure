@@ -10,33 +10,33 @@
 // least pre-c++11) that this is a bad way
 // to do this
 
-// returns true if the object is a string. used
+// returns true if the Object is a string. used
 // so the repl can wrap it in double quotes when
 // printing the value
-inline bool is_string_type(std::shared_ptr<object> o) {
-  return typeid(*o) == typeid(string);
+inline bool is_string_type(std::shared_ptr<Object> o) {
+  return typeid(*o) == typeid(String);
 }
 
-// returns true if the object is a type the repl
+// returns true if the Object is a type the repl
 // can simply print
-inline bool is_plain_type(std::shared_ptr<object> o) {
+inline bool is_plain_type(std::shared_ptr<Object> o) {
   return 
-    typeid(*o) == typeid(integer) ||
-    typeid(*o) == typeid(irrational) ||
-    typeid(*o) == typeid(ratio) ||
-    typeid(*o) == typeid(boolean) ||
-    typeid(*o) == typeid(symbol) ||
-    typeid(*o) == typeid(keyword)
+    typeid(*o) == typeid(Integer) ||
+    typeid(*o) == typeid(Irrational) ||
+    typeid(*o) == typeid(Ratio) ||
+    typeid(*o) == typeid(Boolean) ||
+    typeid(*o) == typeid(Symbol) ||
+    typeid(*o) == typeid(Keyword)
     ;
 }
 
 int cpp_repl(std::istream &in) {
-  auto ns = Namespace::findOrCreate(symbol::create( "user" ));
-  lispreader reader;
-  std::shared_ptr<object> eof_value = std::make_shared<integer>(-1L);
+  auto ns = Namespace::findOrCreate("user");
+  LispReader reader;
+  std::shared_ptr<Object> eof_value = std::make_shared<Integer>(-1L);
   std::cout << "Clojure c++ 1.0a" << std::endl;
   while (1) {
-    std::cout << *ns->get_name() << "=> ";
+    std::cout << ns->getName() << "=> ";
     try {
       // read
       auto o = reader.read(in, false, eof_value, false);
@@ -47,7 +47,7 @@ int cpp_repl(std::istream &in) {
       }
       // TODO: eval before print (Compiler.java:5389)
       // print
-      if (o == object::nil) {
+      if (o == Object::nil) {
         std::cout << "nil";
       } else if (is_string_type(o)) {
         std::cout << "\"" << *o << "\"";

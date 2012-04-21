@@ -1,44 +1,46 @@
 #ifndef _NUMBERS_H
 #define _NUMBERS_H
 
-class number : public object {
-  //std::string to_string() const override;
+class Number : public Object {
+  //std::string toString() const override;
+protected:
+  Number() {};
 };
 
-class integer : public number {
+class Integer : public Number {
 public:
-  integer(const std::string &i);
-  integer(const std::string &i, int base);
-  integer(long long i);
+  Integer(const std::string &i);
+  Integer(const std::string &i, int base);
+  Integer(long long i);
 
-  std::string to_string() const override;
+  std::string toString() const override;
 
-  friend class ratio;
+  friend class Ratio;
 private:
   long long value;
 };
 
-class irrational : public number {
+class Irrational : public Number {
 public:
-  irrational(const std::string &i);
-  irrational(double i);
+  Irrational(const std::string &i);
+  Irrational(double i);
 
-  std::string to_string() const override;
+  std::string toString() const override;
 private:
   double value;
   int precision = -1;
 };
 
-class ratio : public number {
+class Ratio : public Number {
 public:
-  ratio(const std::string &num, const std::string &den);
-  ratio(long long num, long long den);
-  ratio(const integer &num, const integer &den);
+  Ratio(const std::string &num, const std::string &den);
+  Ratio(long long num, long long den);
+  Ratio(const Integer &num, const Integer &den);
 
-  std::string to_string() const override;
+  std::string toString() const override;
 private:
-  std::unique_ptr<integer> num;
-  std::unique_ptr<integer> den;
+  std::unique_ptr<Integer> num;
+  std::unique_ptr<Integer> den;
 };
 
 #endif

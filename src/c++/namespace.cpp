@@ -1,29 +1,33 @@
 #include "clojure.h"
 
-// TODO: since this is private and static, it probably doesn't need to be in the class definition
-// and can simply be visible in this file only
-std::map<std::shared_ptr<symbol>,std::shared_ptr<Namespace>> Namespace::namespaces;
+// TODO: concurrency
+std::map<Symbol,std::shared_ptr<Namespace>> namespaces;
+// is there a case where a namespace has a namespace?
+// is this why the name is a symbol and not a string?
 
-Namespace::Namespace(std::shared_ptr<symbol> name) {
-  this->name = name;
+Namespace::Namespace(const Symbol &name) : name(name) {
   // TODO: mappings
   // TODO: aliases
 }
 
-std::shared_ptr<Namespace> Namespace::findOrCreate(std::shared_ptr<symbol> name) {
+std::shared_ptr<Namespace> Namespace::findOrCreate(const std::string &name) {
+  return Namespace::findOrCreate(Symbol(name));
+}
+
+std::shared_ptr<Namespace> Namespace::findOrCreate(const Symbol &name) {
   auto it = namespaces.find(name);
   if (it != namespaces.end()) {
     return it->second;
   }
-  auto ns = std::shared_ptr<Namespace>( new Namespace(name) );
+  auto ns = std::make_shared<Namespace>(name);
   namespaces[name] = ns;
   return ns;
 }
 
-std::shared_ptr<symbol> Namespace::get_name() {
-  return this->name;
+Symbol Namespace::getName() const {
+  return name;
 }
 
-std::string Namespace::to_string() const {
-  return name->get_name();
+std::string Namespace::toString() const {
+  return name.getName();
 }

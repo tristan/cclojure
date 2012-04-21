@@ -1,16 +1,14 @@
 #include "clojure.h"
 
-boolean::boolean(bool b) {
-  this->value = b;
-}
+Boolean::Boolean(bool b) : value(b) {}
 
-std::string boolean::to_string() const {
+std::string Boolean::toString() const {
   return this->value ? "true" : "false";
 }
 
-bool boolean::operator==(const object &o) const {
+bool Boolean::operator==(const Object &o) const {
   try {
-    const boolean &b = dynamic_cast<const boolean&>(o);
+    const Boolean &b = dynamic_cast<const Boolean&>(o);
     return this->value == b.value;
   } catch (std::bad_cast &e) {
     // TODO: same as string::operator==

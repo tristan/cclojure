@@ -1,18 +1,22 @@
 #ifndef _STRING_H
 #define _STRING_H
 
-// string wrapper class
-class string : public object {
+// String wrapper class
+class String : public Object {
 public:
-  string(const std::string& s);
-  string(const string& s);
-  bool operator==(const object &o) const override;
-  
-  std::string to_string() const override;
-  size_t hash_code() const override;
+  String(const std::string& s);
+  String(const String& s);
+  bool operator==(const Object &o) const override;
+
+  // TODO: is there an operator of some kind that can handle
+  // automatically calling toString if this is passed
+  // to a function instead of an std::string
+
+  std::string toString() const override;
+  size_t hashCode() const override;
 protected:
   // TODO: would making this const make it immutatable?
-  // if i really want an immutable string should i just use c_str?
+  // if i really want an immutable String should i just use c_str?
   std::string str;
 };
 

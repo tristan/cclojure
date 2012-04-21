@@ -2,11 +2,11 @@
 #define _BOOLEAN_H
 
 // boolean wrapper class
-class boolean : public object {
+class Boolean : public Object {
 public:
-  boolean(bool b);
-  bool operator==(const object& o) const override;
-  std::string to_string() const override;
+  Boolean(bool b);
+  bool operator==(const Object& o) const override;
+  std::string toString() const override;
 protected:
   bool value;
 };

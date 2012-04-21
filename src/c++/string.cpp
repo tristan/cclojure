@@ -1,30 +1,24 @@
 #include <functional>
 #include "clojure.h"
 
-string::string(const std::string &s) {
-  // TODO: does this copy? if it compiles i'm assuming yes!
-  this->str = std::string{ s }; 
-}
+String::String(const std::string &s) : str(s) {}
 
-string::string(const string &s) {
-  // TODO: does this copy? if it compiles i'm assuming yes!
-  this->str = std::string{ s.str }; 
-}
+String::String(const String &s) : str(s.str) {}
 
-std::string string::to_string() const {
+std::string String::toString() const {
   // removing the double-quotes here because it should be
-  // the repl's job to know it's printing a string and
+  // the repl's job to know it's printing a String and
   // add the quotes itself
   return str;
 }
 
-size_t string::hash_code() const {
+size_t String::hashCode() const {
   return std::hash<std::string>()(str);
 }
 
-bool string::operator==(const object &o) const {
+bool String::operator==(const Object &o) const {
   try {
-    const string &s = dynamic_cast<const string&>(o);
+    const String &s = dynamic_cast<const String&>(o);
     return this->str == s.str;
   } catch (std::bad_cast &e) {
     // TODO: i don't like the idea of using try catch

@@ -3,41 +3,41 @@
 #include "clojure.h"
 
 // TODO: concurrency
-static std::map<symbol,std::shared_ptr<keyword>> table;
+static std::map<Symbol,std::shared_ptr<Keyword>> table;
 
-std::shared_ptr<keyword> keyword::create(const std::string& name) {
-  return keyword::create(symbol(name));
+std::shared_ptr<Keyword> Keyword::create(const std::string& name) {
+  return Keyword::create(Symbol(name));
 }
 
-std::shared_ptr<keyword> keyword::create(const std::string &ns, 
+std::shared_ptr<Keyword> Keyword::create(const std::string &ns, 
                                          const std::string &name) {
-  return keyword::create(symbol(ns, name));
+  return Keyword::create(Symbol(ns, name));
 }
 
-std::shared_ptr<keyword> keyword::create(const symbol& sym) {
+std::shared_ptr<Keyword> Keyword::create(const Symbol& sym) {
   auto it = table.find(sym);
   if (it != table.end()) {
     return it->second;
   }
-  auto kw = std::make_shared<keyword>(sym);
+  auto kw = std::make_shared<Keyword>(sym);
   // TODO: should i use sym or kw->sym here?
   // does sym get copied when used as a key here?
-  // perhaps the symbol hash is a better key to use
+  // perhaps the Symbol hash is a better key to use
   table[sym] = kw;
   return kw;
 }
 
-std::string keyword::to_string() const {
-  return ":" + sym.to_string();
+std::string Keyword::toString() const {
+  return ":" + sym.toString();
 }
 
-size_t keyword::hash_code() const {
+size_t Keyword::hashCode() const {
   return hash;
 }
 
 // initialise needed because there's no default constructor
-// for symbol thus this->sym can't be initialized
-keyword::keyword(const symbol& sym) : sym(sym) {
+// for Symbol thus this->sym can't be initialized
+Keyword::Keyword(const Symbol& sym) : sym(sym) {
   // TODO: experiment: do i need to specifically copy here
   // or does non-const = const& automatically fire the copy constructor?
   // explicitly implement the copy and see if it gets called normally
