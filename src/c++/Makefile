@@ -1,6 +1,6 @@
 CLJHOME=$(abspath ../..)
-#CXX=clang++
-CXX=g++
+CXX=clang++
+#CXX=g++
 CXXFLAGS=-std=c++11 -g3 -fno-inline -O0
 CC=$(CXX)
 CFLAGS=$(CXXFLAGS)

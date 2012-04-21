@@ -24,8 +24,14 @@ bool object::operator==(const object &o) const {
   return (this == &o);
 }
 
-string::string(std::string s) {
-  this->str = s;
+string::string(const std::string &s) {
+  // TODO: does this copy? if it compiles i'm assuming yes!
+  this->str = std::string{ s }; 
+}
+
+string::string(const string &s) {
+  // TODO: does this copy? if it compiles i'm assuming yes!
+  this->str = std::string{ s.str }; 
 }
 
 std::string string::to_string() {

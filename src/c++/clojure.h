@@ -8,6 +8,20 @@
 
 class object;
 
+bool operator==(std::shared_ptr<object> o1, std::shared_ptr<object> o2);
+
+template<typename T, typename ...Args>
+std::unique_ptr<T> make_unique( Args&& ...args )
+{
+    return std::unique_ptr<T>( new T( std::forward<Args>(args)... ) );
+}
+
+// TODO: look into boost::any as an alternative here
+// which seems to offer us the ability to avoid making extra
+// wrapping classes for string and boolean etc, but may
+// lead to some extra overhead doing type deduction.
+// http://www.boost.org/doc/libs/1_40_0/boost/any.hpp
+
 // base object class
 class object {
 public:
@@ -24,17 +38,20 @@ protected:
   virtual std::string to_string();
 };
 
-// string class
+// string wrapper class
 class string : public object {
 public:
-  string(std::string s);
+  string(const std::string& s);
+  string(const string& s);
   bool operator==(const object &o) const override;
 protected:
+  // TODO: would making this const make it immutatable?
+  // if i really want an immutable string should i just use c_str?
   std::string str;
   std::string to_string() override;
 };
 
-// boolean class
+// boolean wrapper class
 class boolean : public object {
 public:
   boolean(bool b);
@@ -47,8 +64,13 @@ protected:
 // symbol class
 class symbol : public object {
 public:
-  static std::shared_ptr<symbol> create(std::string name);
-  static std::shared_ptr<symbol> create(std::string ns, std::string name);
+  static std::shared_ptr<symbol> create(const std::string &name);
+  static std::shared_ptr<symbol> create(const std::string &ns, 
+                                        const std::string &name);
+  static std::unique_ptr<symbol> create_unique(const std::string &name);
+  static std::unique_ptr<symbol> create_unique(const std::string &ns, 
+                                               const std::string &name);
+
   std::string get_name();
   bool operator==(const object& o) const override;
   bool operator==(const symbol& o) const;
@@ -57,27 +79,48 @@ public:
   friend int compare(const symbol& s1, const symbol& s2);
   friend std::ostream& operator<<(std::ostream& out, std::shared_ptr<symbol> o);
   friend class keyword;
+
+  // TODO: i'm going to make the constructor here public
+  // but it may be better to do something like: http://stackoverflow.com/a/8147326
+  // however, since there's no interning of strings in c++, which is
+  // what i see as the only real advantage to forcing creation of symbols
+  // through "create" in java clojure, i don't think it's really necessary
+  symbol(const std::string &ns, const std::string &name);
+  symbol(const std::string &name);
+
+  // TODO: there are no default initializer_list constructors
+  // this symbol{} does not work
+
 protected:
   std::string ns;
   std::string name;
   size_t hash;
 
-  symbol(std::string ns, std::string name);
+  // TODO: i couldn't seem to get this to work
+  //friend std::unique_ptr<symbol> make_unique<symbol>( std::string ns, std::string name );
+  //friend std::shared_ptr<symbol> std::make_shared<symbol>( std::string ns, std::string name );
+
   std::string to_string() override;
+private:
+  void compute_hash();
 };
 
 // keyword class
 class keyword : public object {
 public:
-  static std::shared_ptr<keyword> create(std::shared_ptr<symbol> name);
-  static std::shared_ptr<keyword> create(std::string name);
-  static std::shared_ptr<keyword> create(std::string ns, std::string name);
+  static std::shared_ptr<keyword> create(const symbol& name);
+  static std::shared_ptr<keyword> create(const std::string& name);
+  static std::shared_ptr<keyword> create(const std::string &ns, 
+                                         const std::string &name);
+  // TODO: note that this is private in java clojure
+  keyword(const symbol& name);
 protected:
   std::string to_string() override;
 private:
-  std::shared_ptr<symbol> sym;
+  // TODO: does the storage of a symbol here simply to allow
+  // namespace qualified keywords?
+  symbol sym;
   size_t hash;
-  keyword(std::shared_ptr<symbol> name);
 };
 
 // namespace class
@@ -101,13 +144,5 @@ private:
 #include "numbers.h"
 
 #include "seqs.h"
-
-bool operator==(std::shared_ptr<object> o1, std::shared_ptr<object> o2);
-
-template<typename T, typename ...Args>
-std::unique_ptr<T> make_unique( Args&& ...args )
-{
-    return std::unique_ptr<T>( new T( std::forward<Args>(args)... ) );
-}
 
 #endif

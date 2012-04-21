@@ -24,8 +24,8 @@ static inline int hex_digit(char c)
 
 std::shared_ptr<object> read_string(std::istream &in) {
   std::stringstream buf;
-  std::function<int ()> getc = // lambda to get the next char, or throw EOF exception
-    [&in] () { 
+  // lambda to get the next char, or throw EOF exception
+  std::function<int ()> getc = [&in] () -> int { 
     int c = in.get();
     if (in.eof()) {
       throw "EOF while reading string";
@@ -130,8 +130,10 @@ std::shared_ptr<object> read_number(std::istream &in) {
   number_type type = number_type::none;
   int base = 10;
 
-  std::function<bool (int)> isend = // lambda to tell if we've reached the end of the number
-    [&in] (int i) { return iswhitespace(i) || isterminator(i) || in.eof(); };
+  // lambda to tell if we've reached the end of the number
+  std::function<bool (int)> isend = [&in] (int i) -> bool { 
+    return iswhitespace(i) || isterminator(i) || in.eof(); 
+  };
 
   int c;
   // process the first few chars
@@ -295,7 +297,7 @@ std::shared_ptr<object> read_token(std::istream &in) {
     return object::F;
   }
   // TODO: / = slash, clojure.core// = slash
-  if (ns != "" && ns.substr(ns.size()-3) == ":/"
+  if ((ns != "" && ns.substr(ns.size()-3) == ":/")
       || s.back() == ':'
       || s.find("::", 1) != std::string::npos) {
     return nullptr;
@@ -306,12 +308,10 @@ std::shared_ptr<object> read_token(std::istream &in) {
     return nullptr;
   }
   bool iskey = s[0] == ':';
-  // TODO: do we need intern?
-  auto sym = symbol::create(iskey ? s.substr(1) : s);
   if (iskey) {
-    return keyword::create(sym);
+    return keyword::create(s.substr(1));
   }
-  return sym;
+  return std::make_shared<symbol>(s);
 }
 
 std::shared_ptr<object> lispreader::read(std::istream &in, bool eof_is_error, 
