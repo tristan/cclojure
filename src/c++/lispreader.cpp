@@ -324,7 +324,6 @@ std::shared_ptr<object> lispreader::read(std::istream &in, bool eof_is_error,
       return eof_value;
     } else {
       if (c == '+' || c == '-') {
-        c = in.get();
         int c2 = in.peek();
         if (std::isdigit(c2)) {
           in.unget();
