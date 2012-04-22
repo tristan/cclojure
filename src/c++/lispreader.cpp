@@ -2,6 +2,7 @@
 #include <string>
 #include <sstream>
 #include <functional>
+#include <list>
 #include "clojure.h"
 #include "utf8.h"
 #include "lispreader.h"
@@ -20,6 +21,38 @@ static inline int hex_digit(char c)
     return ((c >= '0' && c <= '9') ||
             (c >= 'A' && c <= 'F') ||
             (c >= 'a' && c <= 'f'));
+}
+
+// a special ptr for macros that have no return value
+std::shared_ptr<Object> NOOP = std::make_shared<String>("noop");
+
+std::shared_ptr<Object> read(std::istream &in, bool eof_is_error, 
+                             std::shared_ptr<Object> eof_value, bool is_recursive);
+
+// externs for macro_fn
+std::shared_ptr<Object> read_string(std::istream &in);
+std::shared_ptr<Object> read_list(std::istream &in);
+std::shared_ptr<Object> read_number(std::istream &in);
+
+// TODO: can we replace macro_fn with std::function ?
+using macro_fn = std::shared_ptr<Object>(*)(std::istream &);
+
+macro_fn getmacro(int c) {
+  if (c == '"') {
+    return read_string;
+  } else if (c == '(') {
+    return read_list;
+  } else if (c == ')') {
+    // lambda's are awesome!
+    // but! note that this is only ok as long as the capture list is empty
+    // TODO: and i should probably make sure this doesn't incur any
+    // run time overhead as apposed to using pure functions
+    return [] (std::istream &) -> std::shared_ptr<Object> {
+      throw "Unmatched delimiter: )";
+    };
+  } else {
+    return 0;
+  }
 }
 
 std::shared_ptr<Object> read_string(std::istream &in) {
@@ -100,25 +133,46 @@ std::shared_ptr<Object> read_string(std::istream &in) {
   return Object::nil;
 }
 
-std::shared_ptr<Object> read_list(std::istream &in) {
-  return Object::nil;
+std::list<std::shared_ptr<Object>> read_delimited_list(int delim, std::istream &in) {
+  std::list<std::shared_ptr<Object> > list;
+
+  for (; ;) {
+    int c;
+    while (iswhitespace(c = in.get())) {}
+
+    if (in.eof()) {
+      throw "EOF while reading";
+    }
+    
+    if (c == delim) {
+      break;
+    }
+
+    macro_fn fn = getmacro(c);
+    if (fn != 0) {
+      auto m = fn(in);
+      if (m != NOOP) {
+        list.push_back(m);
+      }
+    } else {
+      in.unget();
+      auto o = read(in, true, Object::nil, true);
+      if (o != NOOP) {
+        list.push_back(o);
+      }
+    }
+  }
+
+  return list;
 }
 
-using macro_fn = std::shared_ptr<Object>(*)(std::istream &);
-
-macro_fn getmacro(int c) {
-  if (c == '"') {
-    return read_string;
-  } else if (c == '(') {
-    return read_list;
-  } else {
-    return 0;
-  }
+std::shared_ptr<Object> read_list(std::istream &in) {
+  std::list<std::shared_ptr<Object> > list = read_delimited_list(')', in);
+  return std::make_shared<List>( list );
 }
 
 bool isterminator(int c) {
-  // TODO: this should be modified once the macros array is set up
-  return c == ')' || c == '}' || c == ']';
+  return c != '#' && getmacro(c) != 0;
 }
 
 enum class number_type : int {
@@ -280,7 +334,8 @@ std::shared_ptr<Object> read_token(std::istream &in) {
   std::string ns = "";
   for (; ;) {
     int c = in.get();
-    if (in.eof() || iswhitespace(c) || (c != '#' && getmacro(c) != 0)) {
+    if (in.eof() || iswhitespace(c) || isterminator(c)) {
+      in.unget();
       break;
     }
     buf.put(c);
@@ -320,9 +375,16 @@ std::shared_ptr<Object> read_token(std::istream &in) {
   return std::make_shared<Symbol>(s);
 }
 
-std::shared_ptr<Object> LispReader::read(std::istream &in, bool eof_is_error, 
-                     std::shared_ptr<Object> eof_value, bool is_recursive) {
 
+std::shared_ptr<Object> read(std::istream &in, bool eof_is_error, 
+                             std::shared_ptr<Object> eof_value, bool is_recursive) {
+  return LispReader::read(in, eof_is_error, eof_value, is_recursive);
+}
+
+std::shared_ptr<Object> LispReader::read(std::istream &in, bool eof_is_error, 
+                                         std::shared_ptr<Object> eof_value, 
+                                         bool is_recursive) {
+  //return read(in, eof_is_error, eof_value, is_recursive);
   for (; ;) {
     int c;
     while (iswhitespace(c = in.get())) {}

@@ -1,4 +1,6 @@
 CLJHOME = $(abspath .)
+CXX = clang++
+CXXFLAGS=-std=c++11 -g3 -fno-inline -O0
 
 default: c++
 
@@ -15,3 +17,6 @@ clean:
 
 test: cclj
 	cd test && make
+
+whiteboard: test/c++/whiteboard
+	./test/c++/whiteboard

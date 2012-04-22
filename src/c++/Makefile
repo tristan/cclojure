@@ -6,7 +6,8 @@ CC=$(CXX)
 CFLAGS=$(CXXFLAGS)
 
 EXENAME=cclj
-SRCS = object string boolean symbol keyword namespace numbers seqs utf8 lispreader repl cclj
+SRCS = object string boolean symbol keyword namespace numbers list
+SRCS += utf8 utils lispreader repl cclj
 LIBS = $(SRCS:%=%.o)
 
 default: $(EXENAME)

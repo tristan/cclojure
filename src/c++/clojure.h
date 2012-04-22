@@ -32,8 +32,15 @@ public:
 
   friend std::ostream& operator<<(std::ostream& out, const Object& o);
   virtual bool operator==(const Object& o) const;
-protected:
-  Object() {};
+};
+
+// base seq object
+class Seq : public Object {
+public:
+  virtual std::shared_ptr<Object> first() const = 0;
+  virtual std::shared_ptr<Seq> rest() const = 0;
+  virtual std::shared_ptr<Seq> cons(std::shared_ptr<Object> o) const = 0;
+  virtual size_t count() const = 0;
 };
 
 #include "boolean.h"
@@ -45,6 +52,9 @@ protected:
 
 #include "numbers.h"
 
-#include "seqs.h"
+#include "list.h"
+
+//#include "seqs.h"
+#include "utils.h"
 
 #endif
