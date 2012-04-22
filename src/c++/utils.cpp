@@ -66,7 +66,7 @@ void utils::print(const Object *o, std::ostream &out) {
   } else {
     out << "#<" << typeid(*o).name() << ": " << *o << ">";
   }
-  out << " (" << std::hex << o << ")";
+  //out << " (" << std::hex << o << ")";
 }
 
 std::string utils::print_string(const std::shared_ptr<Object> &o) {

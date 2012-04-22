@@ -33,6 +33,7 @@ std::shared_ptr<Object> read(std::istream &in, bool eof_is_error,
 std::shared_ptr<Object> read_string(std::istream &in);
 std::shared_ptr<Object> read_list(std::istream &in);
 std::shared_ptr<Object> read_number(std::istream &in);
+std::shared_ptr<Object> read_comment(std::istream &in);
 
 // TODO: can we replace macro_fn with std::function ?
 using macro_fn = std::shared_ptr<Object>(*)(std::istream &);
@@ -50,6 +51,20 @@ macro_fn getmacro(int c) {
     return [] (std::istream &) -> std::shared_ptr<Object> {
       throw "Unmatched delimiter: )";
     };
+  } else if (c == '\'') {
+    return [] (std::istream &in) -> std::shared_ptr<Object> {
+      auto o = read(in, true, Object::nil, true);
+      auto l = std::make_shared<List>(o);
+      return l->cons(Symbol::create("quote"));
+    };
+  } else if (c == '@') {
+    return [] (std::istream &in) -> std::shared_ptr<Object> {
+      auto o = read(in, true, Object::nil, true);
+      auto l = std::make_shared<List>(o);
+      return l->cons(Symbol::create("clojure.core", "deref"));
+    };
+  } else if (c == ';') {
+    return read_comment;
   } else {
     return 0;
   }
@@ -169,6 +184,14 @@ std::list<std::shared_ptr<Object>> read_delimited_list(int delim, std::istream &
 std::shared_ptr<Object> read_list(std::istream &in) {
   std::list<std::shared_ptr<Object> > list = read_delimited_list(')', in);
   return std::make_shared<List>( list );
+}
+
+std::shared_ptr<Object> read_comment(std::istream &in) {
+  int c;
+  do {
+    c = in.get();
+  } while (!in.eof() && c != '\n' && c != '\r');
+  return NOOP;
 }
 
 bool isterminator(int c) {
