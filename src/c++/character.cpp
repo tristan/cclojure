@@ -1,13 +1,10 @@
-#include <sstream>
 #include "clojure.h"
 #include "utf8.h"
 
 Character::Character(long c) : ch(c) {}
 
 std::string Character::toString() const {
-  std::stringstream ss;
-  u8_wc_toutf8(ss, ch);
-  return ss.str();
+  return u8_wc_toutf8str(ch);
 }
 
 bool Character::operator==(const Object &o) const {
