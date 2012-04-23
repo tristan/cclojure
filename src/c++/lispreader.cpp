@@ -32,6 +32,7 @@ std::shared_ptr<Object> read(std::istream &in, bool eof_is_error,
 // externs for macro_fn
 std::shared_ptr<Object> read_string(std::istream &in);
 std::shared_ptr<Object> read_list(std::istream &in);
+std::shared_ptr<Object> read_vector(std::istream &in);
 std::shared_ptr<Object> read_number(std::istream &in);
 std::shared_ptr<Object> read_comment(std::istream &in);
 std::shared_ptr<Object> read_character(std::istream &in);
@@ -51,6 +52,12 @@ macro_fn getmacro(int c) {
     // run time overhead as apposed to using pure functions
     return [] (std::istream &) -> std::shared_ptr<Object> {
       throw "Unmatched delimiter: )";
+    };
+  } else if (c == '[') {
+    return read_vector;
+  } else if (c == ']') {
+    return [] (std::istream &) -> std::shared_ptr<Object> {
+      throw "Unmatched delimiter: ]";
     };
   } else if (c == '\'') {
     return [] (std::istream &in) -> std::shared_ptr<Object> {
@@ -257,6 +264,11 @@ std::list<std::shared_ptr<Object>> read_delimited_list(int delim, std::istream &
 
 std::shared_ptr<Object> read_list(std::istream &in) {
   std::list<std::shared_ptr<Object> > list = read_delimited_list(')', in);
+  return std::make_shared<List>( list );
+}
+
+std::shared_ptr<Object> read_vector(std::istream &in) {
+  std::list<std::shared_ptr<Object> > list = read_delimited_list(']', in);
   return std::make_shared<List>( list );
 }
 

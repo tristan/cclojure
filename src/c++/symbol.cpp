@@ -1,10 +1,6 @@
 #include <functional>
 #include "clojure.h"
 
-// TODO: thoughts on const& vs copys
-// this function doesn't store its own copy of name so it
-// makes sense to not copy the string here. but the Symbol
-// constructor makes a copy of the string for storage
 std::shared_ptr<Symbol> Symbol::create(const std::string& name) {
   return Symbol::create_unique(name);
 }
@@ -39,6 +35,10 @@ size_t Symbol::hashCode() const {
   return hash;
 }
 
+// TODO: thoughts on const& vs copys
+// this function doesn't always store its own copy of name so 
+// it makes sense to not copy the string here. but the Symbol
+// (ns,name) constructor makes a copy of the strings for storage
 Symbol::Symbol(const std::string &name) {
   size_t slashpos = name.rfind("/");
   if (slashpos != std::string::npos) {
@@ -51,13 +51,11 @@ Symbol::Symbol(const std::string &name) {
   computeHash();
 }
 
-Symbol::Symbol(const std::string &ns, const std::string &name) {
-  // TODO: is passing in const& and then explicitly copying the string
-  // really necessary? if i'm copying it, is it better to let the object
-  // get copied. how do i tell if this->ns = (a non-const ns) uses move
-  // semantics rather than creating a whole new object?
-  this->ns = std::string{ ns }; // TODO: do i really need to be specific here?
-  this->name = std::string{ name };
+// TODO: is passing in const& and then explicitly copying the string
+// really necessary? if i'm copying it, is it better to let the object
+// get copied. how do i tell if this->ns = (a non-const ns) uses move
+// semantics rather than creating a whole new object?
+Symbol::Symbol(const std::string &ns, const std::string &name) : ns(ns), name(name) {
   computeHash();
 }
 
@@ -116,13 +114,3 @@ bool Symbol::operator>(const Symbol& o) const {
   return compare(*this, o) > 0;
 }
 
-/*
-std::ostream& operator<<(std::ostream& out, std::shared_ptr<Symbol> o) {
-  if (o == nullptr) {
-    out << object::nil;
-  } else {
-    out << o->get_name();
-  }
-  return out;
-}
-*/

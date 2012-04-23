@@ -2,8 +2,6 @@
 #define _NAMESPACE_H
 
 // namespace class
-// TODO: look into naming conventions
-// using capital here because namespace is a keyword in c++
 class Namespace : public Object {
 public:
   static std::shared_ptr<Namespace> findOrCreate(const Symbol &name);
