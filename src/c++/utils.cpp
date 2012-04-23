@@ -10,13 +10,13 @@
 // returns true if the Object is a string. used
 // so the repl can wrap it in double quotes when
 // printing the value
-inline bool is_string_type(const Object* o) {
+inline bool is_string_type(const std::shared_ptr<const Object> &o) {
   return typeid(*o) == typeid(String);
 }
 
 // returns true if the Object is a type the repl
 // can simply print
-inline bool is_plain_type(const Object* o) {
+inline bool is_plain_type(const std::shared_ptr<const Object> &o) {
   return 
     typeid(*o) == typeid(Integer) ||
     typeid(*o) == typeid(Irrational) ||
@@ -27,34 +27,34 @@ inline bool is_plain_type(const Object* o) {
     ;
 }
 
-inline std::tuple<int,int> seq_type(const Object* o) {
+inline std::tuple<int,int> seq_type(const std::shared_ptr<const Object> &o) {
   if (typeid(*o) == typeid(List)) {
     return std::tuple<int,int>{'(', ')'};
   }
   return std::tuple<int,int>{ 0, 0 }; 
 }
 
-void utils::print(const std::shared_ptr<Object> &o, std::ostream &out) {
-  print(o.get(), out);
-}
-
-void utils::print(const Object *o, std::ostream &out) {
-  if (o == 0) {
+// TODO: const <const> & ????????
+// find out what all of this really means!
+// should all of my shared_ptr's be to const Objects?
+// this seems like what i'd want seeing as all objects should be immutable
+void utils::print(const std::shared_ptr<const Object> &o, std::ostream &out) {
+  if (o == nullptr) {
     out << "nil";
     return;
   }
   std::tuple<int,int> brackets = seq_type(o);
   if (std::get<0>(brackets) != 0) {
-    const Seq *s = dynamic_cast<const Seq*>(o);
+    const std::shared_ptr<const Seq> s = std::dynamic_pointer_cast<const Seq>(o);
     out << (char)std::get<0>(brackets);
     if (s->count() > 0) {
-      print(s->first().get(), out);
+      print(s->first(), out);
     }
     if (s->count() > 1) {
       auto r = s->rest();
       do {
         out << " ";
-        print(r->first().get(), out);
+        print(r->first(), out);
         r = r->rest();
       } while (r != Object::nil);
     }
@@ -69,37 +69,9 @@ void utils::print(const Object *o, std::ostream &out) {
   //out << " (" << std::hex << o << ")";
 }
 
-std::string utils::print_string(const std::shared_ptr<Object> &o) {
-  return print_string(o.get());
-}
-
-std::string utils::print_string(const Object *o) {
+std::string utils::print_string(const std::shared_ptr<const Object> &o) {
   std::stringstream ss;
   print(o, ss);
   return ss.str();
 }
 
-/*
-
-  std::stringstream ss;
-  ss << "(";
-  if (_count > 0) {
-    ss << (_first == Object::nil ? "nil" : _first->toString());
-    if (_rest != Object::nil) {
-      ss << " ";
-      std::shared_ptr<List> r = _rest;
-      while (r->_count > 0) {
-        ss << (r->_first == Object::nil ? "nil" : r->_first->toString());
-        if (r->_rest == Object::nil) {
-          break;
-        }
-        ss << " ";
-        r = r->_rest;
-      }
-    }
-  }
-  ss << ")";
-  return ss.str();
-
-
-*/

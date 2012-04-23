@@ -20,7 +20,9 @@ std::unique_ptr<T> make_unique( Args&& ...args )
 // http://www.boost.org/doc/libs/1_40_0/boost/any.hpp
 
 // base object class
-class Object {
+// TODO: how much overhead is added by enable_shared_from_this ?
+// should i only turn this on for objects that really need it ?
+class Object : public std::enable_shared_from_this<Object> {
 public:
   static std::shared_ptr<Object> nil;
   static std::shared_ptr<Object> T;
