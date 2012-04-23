@@ -34,6 +34,7 @@ std::shared_ptr<Object> read_string(std::istream &in);
 std::shared_ptr<Object> read_list(std::istream &in);
 std::shared_ptr<Object> read_number(std::istream &in);
 std::shared_ptr<Object> read_comment(std::istream &in);
+std::shared_ptr<Object> read_character(std::istream &in);
 
 // TODO: can we replace macro_fn with std::function ?
 using macro_fn = std::shared_ptr<Object>(*)(std::istream &);
@@ -65,9 +66,82 @@ macro_fn getmacro(int c) {
     };
   } else if (c == ';') {
     return read_comment;
+  } else if (c == '\\') {
+    return read_character;
   } else {
     return 0;
   }
+}
+
+inline bool isterminator(int c) {
+  return c != '#' && getmacro(c) != 0;
+}
+
+long read_unicode_char(const std::string &token, int offset, int length, int base) {
+  if (token.size() != offset + length) {
+    throw "Invalid unicode character: \\" + token;
+  }
+  long uc = 0;
+  for (int i = offset; i < offset + length; ++i) {
+    long d = std::stol(token.substr(i, 1), 0, base);
+    if (d == -1) {
+      throw "Invalid digit: " + token.substr(i, 1);
+    }
+    uc = uc * base + d;
+  }
+  return uc;
+}
+
+std::shared_ptr<Object> read_character(std::istream &in) {
+  std::stringstream buf;
+  int c = in.get();
+  if (in.eof()) {
+    throw "EOF while reading character";
+  }
+  buf.put(c);
+  for (; ;) {
+    c = in.get();
+    if (in.eof() || iswhitespace(c) || isterminator(c)) {
+      in.unget();
+      break;
+    }
+    buf.put(c);    
+  }
+  std::string token = buf.str();
+  if (token.size() == 1) {
+    return std::make_shared<Character>( token[0] );
+  } else if (token == "newline") {
+    return std::make_shared<Character>( '\n' );
+  } else if (token == "space") {
+    return std::make_shared<Character>( ' ' );
+  } else if (token == "tab") {
+    return std::make_shared<Character>( '\t' );
+  } else if (token == "backspace") {
+    return std::make_shared<Character>( '\b' );
+  } else if (token == "formfeed") {
+    return std::make_shared<Character>( '\f' );
+  } else if (token == "return") {
+    return std::make_shared<Character>( '\r' );
+  } else if (token[0] == 'u') {
+    long uc = read_unicode_char(token, 1, 4, 16);
+    if (c >= 0xD800 && c <= 0xDFFF) {
+      // TODO: java clojure actually prints u + the hex value of uc
+      // is this any different than token?
+      throw "Invalid character constant: \\" + token;
+    }
+    return std::make_shared<Character>( uc );
+  } else if (token[0] == 'o') {
+    int len = token.size() - 1;
+    if (len > 3) {
+      throw "Invalid octal escape sequence length: " + std::to_string(len);
+    }
+    long uc = read_unicode_char(token, 1, len, 8);
+    if (uc > 0377) {
+      throw "Octal escape sequence mst be in range [0, 377].";
+    }
+    return std::make_shared<Character>( uc );
+  }
+  throw "Unsupported character: \\" + token;
 }
 
 std::shared_ptr<Object> read_string(std::istream &in) {
@@ -192,10 +266,6 @@ std::shared_ptr<Object> read_comment(std::istream &in) {
     c = in.get();
   } while (!in.eof() && c != '\n' && c != '\r');
   return NOOP;
-}
-
-bool isterminator(int c) {
-  return c != '#' && getmacro(c) != 0;
 }
 
 enum class number_type : int {

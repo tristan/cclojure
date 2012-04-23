@@ -14,6 +14,10 @@ inline bool is_string_type(const std::shared_ptr<const Object> &o) {
   return typeid(*o) == typeid(String);
 }
 
+inline bool is_char_type(const std::shared_ptr<const Object> &o) {
+  return typeid(*o) == typeid(Character);
+}
+
 // returns true if the Object is a type the repl
 // can simply print
 inline bool is_plain_type(const std::shared_ptr<const Object> &o) {
@@ -61,6 +65,24 @@ void utils::print(const std::shared_ptr<const Object> &o, std::ostream &out) {
     out << (char)std::get<1>(brackets);
   } else if (is_string_type(o)) {
     out << "\"" << *o << "\"";
+  } else if (is_char_type(o)) {
+    out << "\\";
+    std::string s = o->toString();
+    if (s[0] == '\n') {
+      out << "newline";
+    } else if (s[0] == ' ') {
+      out << "space";
+    } else if (s[0] == '\t') {
+      out << "tab";
+    } else if (s[0] == '\b') {
+      out << "backspace";
+    } else if (s[0] == '\f') {
+      out << "formfeed";
+    } else if (s[0] == '\r') {
+      out << "return";
+    } else {
+      out << s;
+    }
   } else if (is_plain_type(o)) {
     out << *o;
   } else {

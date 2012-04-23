@@ -47,6 +47,7 @@ public:
 
 #include "boolean.h"
 #include "string.h"
+#include "character.h"
 
 #include "symbol.h"
 #include "keyword.h"
