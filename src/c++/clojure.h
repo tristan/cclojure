@@ -56,6 +56,7 @@ public:
 #include "numbers.h"
 
 #include "list.h"
+#include "vector.h"
 
 //#include "seqs.h"
 #include "utils.h"

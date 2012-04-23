@@ -269,7 +269,7 @@ std::shared_ptr<Object> read_list(std::istream &in) {
 
 std::shared_ptr<Object> read_vector(std::istream &in) {
   std::list<std::shared_ptr<Object> > list = read_delimited_list(']', in);
-  return std::make_shared<List>( list );
+  return std::make_shared<Vector>( list );
 }
 
 std::shared_ptr<Object> read_comment(std::istream &in) {

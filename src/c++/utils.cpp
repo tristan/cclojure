@@ -34,6 +34,8 @@ inline bool is_plain_type(const std::shared_ptr<const Object> &o) {
 inline std::tuple<int,int> seq_type(const std::shared_ptr<const Object> &o) {
   if (typeid(*o) == typeid(List)) {
     return std::tuple<int,int>{'(', ')'};
+  } else if (typeid(*o) == typeid(Vector)) {
+    return std::tuple<int,int>{'[', ']'};
   }
   return std::tuple<int,int>{ 0, 0 }; 
 }

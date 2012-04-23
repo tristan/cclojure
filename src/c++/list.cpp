@@ -43,8 +43,6 @@ std::shared_ptr<Seq> List::cons(std::shared_ptr<Object> o) const {
                                  std::make_shared<List>(_first, _rest) );
 }
 
-// TODO: most of the code here should be done by a generic function
-// that the repl can call when it has a "seq" type
 std::string List::toString() const {
   return utils::print_string( shared_from_this() );
 }

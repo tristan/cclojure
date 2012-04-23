@@ -1,12 +1,14 @@
 CLJHOME=$(abspath ../..)
-#CXX=clang++
-CXX=g++
+CXX=clang++
+#CXX=g++
 CXXFLAGS=-std=c++11 -g3 -fno-inline -O0
 CC=$(CXX)
 CFLAGS=$(CXXFLAGS)
 
 EXENAME=cclj
-SRCS = object string boolean character symbol keyword namespace numbers list
+SRCS = object string boolean character symbol keyword namespace
+SRCS += numbers
+SRCS += list vector
 SRCS += utf8 utils lispreader repl cclj
 LIBS = $(SRCS:%=%.o)
 
