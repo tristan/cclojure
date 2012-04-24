@@ -8,7 +8,7 @@ CFLAGS=$(CXXFLAGS)
 EXENAME=cclj
 SRCS = object string boolean character symbol keyword namespace
 SRCS += numbers
-SRCS += list vector
+SRCS += list vector map set
 SRCS += utf8 utils lispreader repl cclj
 LIBS = $(SRCS:%=%.o)
 

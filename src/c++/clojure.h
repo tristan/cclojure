@@ -45,6 +45,10 @@ public:
   virtual size_t count() const = 0;
 };
 
+struct compare_object_in_shared_ptr {
+  bool operator()(const std::shared_ptr<Object>& lhs, const std::shared_ptr<Object>& rhs) const;
+};
+
 #include "boolean.h"
 #include "string.h"
 #include "character.h"
@@ -57,6 +61,8 @@ public:
 
 #include "list.h"
 #include "vector.h"
+#include "map.h"
+#include "set.h"
 
 //#include "seqs.h"
 #include "utils.h"

@@ -33,6 +33,8 @@ std::shared_ptr<Object> read(std::istream &in, bool eof_is_error,
 std::shared_ptr<Object> read_string(std::istream &in);
 std::shared_ptr<Object> read_list(std::istream &in);
 std::shared_ptr<Object> read_vector(std::istream &in);
+std::shared_ptr<Object> read_map(std::istream &in);
+std::shared_ptr<Object> read_set(std::istream &in);
 std::shared_ptr<Object> read_number(std::istream &in);
 std::shared_ptr<Object> read_comment(std::istream &in);
 std::shared_ptr<Object> read_character(std::istream &in);
@@ -59,6 +61,12 @@ macro_fn getmacro(int c) {
     return [] (std::istream &) -> std::shared_ptr<Object> {
       throw "Unmatched delimiter: ]";
     };
+  } else if (c == '{') {
+    return read_map;
+  } else if (c == '}') {
+    return [] (std::istream &) -> std::shared_ptr<Object> {
+      throw "Unmatched delimiter: }";
+    };
   } else if (c == '\'') {
     return [] (std::istream &in) -> std::shared_ptr<Object> {
       auto o = read(in, true, Object::nil, true);
@@ -75,6 +83,21 @@ macro_fn getmacro(int c) {
     return read_comment;
   } else if (c == '\\') {
     return read_character;
+  } else if (c == '#') {
+    // dispatch macro reader (lambda)
+    // TODO: is this over-using lambdas? what is the overhead of a lambda
+    // over a pure function, esp if the function is being called via a ptr
+    return [] (std::istream &in) -> std::shared_ptr<Object> {
+      int c = in.get();
+      if (in.eof()) {
+        throw "EOF while reading character";
+      }
+      if (c == '{') {
+        return read_set(in);
+      } else {
+      }
+      throw "No dispatch macro for: " + std::string{ (char)c };
+    };
   } else {
     return 0;
   }
@@ -270,6 +293,19 @@ std::shared_ptr<Object> read_list(std::istream &in) {
 std::shared_ptr<Object> read_vector(std::istream &in) {
   std::list<std::shared_ptr<Object> > list = read_delimited_list(']', in);
   return std::make_shared<Vector>( list );
+}
+
+std::shared_ptr<Object> read_map(std::istream &in) {
+  std::list<std::shared_ptr<Object> > list = read_delimited_list('}', in);
+  if ((list.size() & 1) == 1) {
+    throw "Map literal must contain an even number of forms";
+  }
+  return std::make_shared<Map>( list );
+}
+
+std::shared_ptr<Object> read_set(std::istream &in) {
+  std::list<std::shared_ptr<Object> > list = read_delimited_list('}', in);
+  return std::make_shared<Set>( list );
 }
 
 std::shared_ptr<Object> read_comment(std::istream &in) {

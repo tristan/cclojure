@@ -18,6 +18,10 @@ inline bool is_char_type(const std::shared_ptr<const Object> &o) {
   return typeid(*o) == typeid(Character);
 }
 
+inline bool is_map_type(const std::shared_ptr<const Object> &o) {
+  return typeid(*o) == typeid(Map);
+}
+
 // returns true if the Object is a type the repl
 // can simply print
 inline bool is_plain_type(const std::shared_ptr<const Object> &o) {
@@ -65,6 +69,12 @@ void utils::print(const std::shared_ptr<const Object> &o, std::ostream &out) {
       } while (r != Object::nil);
     }
     out << (char)std::get<1>(brackets);
+  } else if (is_map_type(o)) {
+    //const std::shared_ptr<const Map> m = std::dynamic_pointer_cast<const Map>(o);
+    // TODO: map->toString() needs to call this instead of the other way around
+    // this should be done once i figure out the details of how to represent
+    // the interface tree that java clojure uses
+    out << o->toString();
   } else if (is_string_type(o)) {
     out << "\"" << *o << "\"";
   } else if (is_char_type(o)) {
@@ -98,4 +108,3 @@ std::string utils::print_string(const std::shared_ptr<const Object> &o) {
   print(o, ss);
   return ss.str();
 }
-
