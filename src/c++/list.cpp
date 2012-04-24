@@ -22,7 +22,7 @@ List::List(const std::list<std::shared_ptr<Object> > &init)
       _rest = std::make_shared<List>(_first, _rest);
       _first = *it++;
     }
-    _count = 1 + _rest->count();
+    _count = 1 + (_rest == Object::nil ? 0 : _rest->count());
   }
 }
 
