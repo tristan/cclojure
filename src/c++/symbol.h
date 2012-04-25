@@ -21,11 +21,7 @@ public:
 
   bool operator==(const Object& o) const override;
 
-  // needed to allow using Symbols as keys in std::maps
-  bool operator==(const Symbol& o) const;
-  bool operator<(const Symbol& o) const;
-  bool operator>(const Symbol& o) const;
-  friend int compare(const Symbol& s1, const Symbol& s2);
+  int compareTo(const Object& o) const override;
 
   // I thought about removing these since they're simply helper functions
   // and don't provide any real value, but I came to the conclusion that
@@ -39,9 +35,9 @@ public:
 protected:
   std::string ns;
   std::string name;
-  size_t hash;
 private:
   void computeHash();
+  size_t hash;
 };
 
 #endif

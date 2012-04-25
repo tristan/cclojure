@@ -14,6 +14,9 @@ public:
 
   std::string toString() const override;
   size_t hashCode() const override;
+
+  int compareTo(const Object& o) const override;
+
 protected:
   // TODO: would making this const make it immutatable?
   // if i really want an immutable String should i just use c_str?

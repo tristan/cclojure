@@ -11,7 +11,7 @@ public:
   size_t count() const;
 private:
   // TODO: java clojure's impl is more complex
-  std::set<std::shared_ptr<Object>,compare_object_in_shared_ptr> set;
+  std::set<std::shared_ptr<Object>,compare_hashcodes> set;
 };
 
 #endif

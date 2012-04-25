@@ -14,6 +14,8 @@ public:
   Integer(long long i);
 
   std::string toString() const override;
+  size_t hashCode() const override;
+  int compareTo(const Object& o) const override;
 
   friend class Ratio;
 private:
@@ -26,6 +28,9 @@ public:
   Irrational(double i);
 
   std::string toString() const override;
+  //size_t hashCode() const override;
+  int compareTo(const Object& o) const override;
+
 private:
   double value;
   int precision = -1;
@@ -38,6 +43,9 @@ public:
   Ratio(const Integer &num, const Integer &den);
 
   std::string toString() const override;
+  //size_t hashCode() const override;
+  int compareTo(const Object& o) const override;
+
 private:
   std::unique_ptr<Integer> num;
   std::unique_ptr<Integer> den;

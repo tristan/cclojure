@@ -69,48 +69,37 @@ void Symbol::computeHash() {
 }
 
 bool Symbol::operator==(const Object& o) const {
-  try {
-    const Symbol &s = dynamic_cast<const Symbol&>(o);
-    return this->name == s.name && this->ns == s.ns;
-  } catch (std::bad_cast &e) {
-    // TODO: same as string::operator==
+  if (typeid(o) != typeid(Symbol)) {
     return false;
   }
+  const Symbol &s = dynamic_cast<const Symbol&>(o);
+  return this->name == s.name && this->ns == s.ns;
 }
 
-int compare(const Symbol& s1, const Symbol& s2) {
-  if (s1.ns == "" && s2.ns != "") {
+int Symbol::compareTo(const Object& o) const {
+  if (typeid(o) != typeid(Symbol)) {
+    throw std::string(typeid(o).name()) + " cannot be case to Symbol";
+  }
+  const Symbol &s = dynamic_cast<const Symbol&>(o);
+  if (this->ns == "" && s.ns != "") {
     return -1;
   }
-  if (s1.ns != "") {
-    if (s2.ns == "") {
+  if (this->ns != "") {
+    if (s.ns == "") {
       return 1;
     }
-    if (s1.ns < s2.ns) {
+    if (this->ns < s.ns) {
       return -1;
     }
-    if (s1.ns > s2.ns) {
+    if (this->ns > s.ns) {
       return 1;
     }
   }
-  if (s1.name < s2.name) {
+  if (this->name < s.name) {
     return -1;
   }
-  if (s1.name > s2.name) {
+  if (this->name > s.name) {
     return 1;
   }
   return 0;
 }
-
-bool Symbol::operator==(const Symbol& o) const {
-  return compare(*this, o) == 0;
-}
-
-bool Symbol::operator<(const Symbol& o) const {
-  return compare(*this, o) < 0;
-}
-
-bool Symbol::operator>(const Symbol& o) const {
-  return compare(*this, o) > 0;
-}
-

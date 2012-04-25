@@ -30,10 +30,13 @@ public:
 
   virtual std::string toString() const = 0;
   // TODO: make this = 0 and implement it for every Object type
-  virtual size_t hashCode() const { return 0; }
+  virtual size_t hashCode() const;
 
   friend std::ostream& operator<<(std::ostream& out, const Object& o);
   virtual bool operator==(const Object& o) const;
+  virtual int compareTo(const Object& o) const;
+  virtual bool operator<(const Object& o) const;
+  virtual bool operator>(const Object& o) const;
 };
 
 // base seq object
@@ -46,6 +49,9 @@ public:
 };
 
 struct compare_object_in_shared_ptr {
+  bool operator()(const std::shared_ptr<Object>& lhs, const std::shared_ptr<Object>& rhs) const;
+};
+struct compare_hashcodes {
   bool operator()(const std::shared_ptr<Object>& lhs, const std::shared_ptr<Object>& rhs) const;
 };
 

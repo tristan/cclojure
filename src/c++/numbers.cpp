@@ -5,10 +5,6 @@
 #include <algorithm>
 #include "clojure.h"
 
-/*std::string Number::toString() const {
-  return "#<Number Object>";
-  }*/
-
 Integer::Integer(const std::string &i) {
   // TODO: support larger ints
   this->value = std::stoll(i);
@@ -28,6 +24,24 @@ std::string Integer::toString() const {
   std::stringstream sstm;
   sstm << value;
   return sstm.str();
+}
+
+size_t Integer::hashCode() const {
+  return this->value;
+}
+
+int Integer::compareTo(const Object& o) const {
+  if (typeid(o) != typeid(Integer)) {
+    throw std::string(typeid(o).name()) + " cannot be case to Integer";
+  }
+  const Integer& i = dynamic_cast<const Integer&>(o);
+  if (this->value < i.value) {
+    return -1;
+  }
+  if (this->value > i.value) {
+    return 1;
+  }
+  return 0;
 }
 
 Irrational::Irrational(const std::string &i) {
@@ -71,6 +85,20 @@ std::string Irrational::toString() const {
   return sstm.str();
 }
 
+int Irrational::compareTo(const Object& o) const {
+  if (typeid(o) != typeid(Irrational)) {
+    throw std::string(typeid(o).name()) + " cannot be case to Irrational";
+  }
+  const Irrational& i = dynamic_cast<const Irrational&>(o);
+  if (this->value < i.value) {
+    return -1;
+  }
+  if (this->value > i.value) {
+    return 1;
+  }
+  return 0;
+}
+
 Ratio::Ratio(const std::string &num, const std::string &den) {
   this->num = make_unique<Integer>(num);
   this->den = make_unique<Integer>(den);
@@ -90,4 +118,20 @@ std::string Ratio::toString() const {
   std::stringstream sstm;
   sstm << num->toString() << "/" << den->toString();
   return sstm.str();
+}
+
+int Ratio::compareTo(const Object& o) const {
+  if (typeid(o) != typeid(Ratio)) {
+    throw std::string(typeid(o).name()) + " cannot be case to Ratio";
+  }
+  const Ratio& r = dynamic_cast<const Ratio&>(o);
+  double tv = (1.0 * this->num->value) / this->den->value;
+  double rv = (1.0 * r.num->value) / r.den->value;
+  if (tv < rv) {
+    return -1;
+  }
+  if (tv > rv) {
+    return 1;
+  }
+  return 0;
 }
