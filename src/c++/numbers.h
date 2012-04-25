@@ -1,7 +1,7 @@
 #ifndef _NUMBERS_H
 #define _NUMBERS_H
 
-class Number : public Comparable {
+class Number : public Object, public Comparable {
   //std::string toString() const override;
 protected:
   Number() {};
@@ -15,8 +15,9 @@ public:
 
   std::string toString() const override;
   size_t hashCode() const override;
-  int compareTo(const Object& o) const override;
+  int compareTo(const Comparable& o) const override;
 
+  bool instanceof(const std::type_info &info) const override;
   friend class Ratio;
 private:
   long long value;
@@ -29,8 +30,9 @@ public:
 
   std::string toString() const override;
   size_t hashCode() const override;
-  int compareTo(const Object& o) const override;
+  int compareTo(const Comparable& o) const override;
 
+  bool instanceof(const std::type_info &info) const override;
 private:
   double value;
   int precision = -1;
@@ -44,8 +46,9 @@ public:
 
   std::string toString() const override;
   size_t hashCode() const override;
-  int compareTo(const Object& o) const override;
+  int compareTo(const Comparable& o) const override;
 
+  bool instanceof(const std::type_info &info) const override;
 private:
   std::unique_ptr<Integer> num;
   std::unique_ptr<Integer> den;

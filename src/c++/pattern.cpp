@@ -57,3 +57,9 @@ Pattern::Pattern(const std::string &pattern)
 std::string Pattern::toString() const {
   return this->pattern;
 }
+
+bool Pattern::instanceof(const std::type_info &info) const {
+  return (
+          typeid(Pattern) == info
+          );
+}

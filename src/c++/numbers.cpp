@@ -30,9 +30,9 @@ size_t Integer::hashCode() const {
   return this->value;
 }
 
-int Integer::compareTo(const Object& o) const {
+int Integer::compareTo(const Comparable& o) const {
   if (typeid(o) != typeid(Integer)) {
-    throw std::string(typeid(o).name()) + " cannot be case to Integer";
+    throw std::string(typeid(o).name()) + " cannot be cast to Integer";
   }
   const Integer& i = dynamic_cast<const Integer&>(o);
   if (this->value < i.value) {
@@ -42,6 +42,14 @@ int Integer::compareTo(const Object& o) const {
     return 1;
   }
   return 0;
+}
+
+bool Integer::instanceof(const std::type_info &info) const {
+  return (
+          typeid(Integer) == info ||
+          typeid(Number) == info ||
+          typeid(Comparable) == info
+          );
 }
 
 Irrational::Irrational(const std::string &i) {
@@ -103,9 +111,9 @@ size_t Irrational::hashCode() const {
   return r;
 }
 
-int Irrational::compareTo(const Object& o) const {
+int Irrational::compareTo(const Comparable& o) const {
   if (typeid(o) != typeid(Irrational)) {
-    throw std::string(typeid(o).name()) + " cannot be case to Irrational";
+    throw std::string(typeid(o).name()) + " cannot be cast to Irrational";
   }
   const Irrational& i = dynamic_cast<const Irrational&>(o);
   if (this->value < i.value) {
@@ -115,6 +123,14 @@ int Irrational::compareTo(const Object& o) const {
     return 1;
   }
   return 0;
+}
+
+bool Irrational::instanceof(const std::type_info &info) const {
+  return (
+          typeid(Irrational) == info ||
+          typeid(Number) == info ||
+          typeid(Comparable) == info
+          );
 }
 
 Ratio::Ratio(const std::string &num, const std::string &den) {
@@ -142,9 +158,9 @@ size_t Ratio::hashCode() const {
   return this->num->hashCode() ^ this->den->hashCode();
 }
 
-int Ratio::compareTo(const Object& o) const {
+int Ratio::compareTo(const Comparable& o) const {
   if (typeid(o) != typeid(Ratio)) {
-    throw std::string(typeid(o).name()) + " cannot be case to Ratio";
+    throw std::string(typeid(o).name()) + " cannot be cast to Ratio";
   }
   const Ratio& r = dynamic_cast<const Ratio&>(o);
   double tv = (1.0 * this->num->value) / this->den->value;
@@ -156,4 +172,12 @@ int Ratio::compareTo(const Object& o) const {
     return 1;
   }
   return 0;
+}
+
+bool Ratio::instanceof(const std::type_info &info) const {
+  return (
+          typeid(Ratio) == info ||
+          typeid(Number) == info ||
+          typeid(Comparable) == info
+          );
 }

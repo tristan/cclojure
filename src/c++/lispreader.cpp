@@ -41,10 +41,12 @@ std::shared_ptr<Object> read_character(std::istream &in);
 std::shared_ptr<Object> read_regex(std::istream &in);
 std::shared_ptr<Object> read_meta(std::istream &in);
 
-std::shared_ptr<Seq> wrap_read(std::istream &in, std::shared_ptr<Symbol> sym) {
+std::shared_ptr<Object> wrap_read(std::istream &in, std::shared_ptr<Symbol> sym) {
   auto o = read(in, true, Object::nil, true);
   auto l = std::make_shared<List>(o);
-  return l->cons(sym);
+  // TODO: note that we needed to cast this in the return value
+  // because cons retuns a Seq. not sure how i feel about this yet
+  return std::dynamic_pointer_cast<Object>(l->cons(sym));
 }
 
 // TODO: can we replace macro_fn with std::function ?
@@ -396,7 +398,7 @@ std::shared_ptr<Object> read_meta(std::istream &in) {
     throw "Metadata must be Symbol,Keyword,String or Map";
   }
   auto o = read(in, true, Object::nil, true);
-  if (o->hasmetadata()) {
+  if (o->instanceof(typeid(Meta))) {
     // TODO: line number support
     // TODO: refs
     // merge metadata

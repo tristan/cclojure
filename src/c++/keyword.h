@@ -20,6 +20,7 @@ public:
 
   std::string toString() const override;
   size_t hashCode() const override;
+  bool instanceof(const std::type_info &info) const override;
 private:
   // TODO: does the storage of a symbol here simply to allow
   // namespace qualified Keywords?

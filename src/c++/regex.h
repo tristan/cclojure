@@ -11,6 +11,7 @@ class Pattern : public Object {
 public:
   Pattern(const std::string &pattern);
   std::string toString() const override;
+  bool instanceof(const std::type_info &info) const override;
 private:
   std::string pattern;
   std::regex regexp;

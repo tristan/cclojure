@@ -2,7 +2,7 @@
 #define _STRING_H
 
 // String wrapper class
-class String : public Comparable {
+class String : public Object, public Comparable {
 public:
   String(const std::string& s);
   String(const String& s);
@@ -15,8 +15,9 @@ public:
   std::string toString() const override;
   size_t hashCode() const override;
 
-  int compareTo(const Object& o) const override;
+  int compareTo(const Comparable& o) const override;
 
+  bool instanceof(const std::type_info &info) const override;
 protected:
   // TODO: would making this const make it immutatable?
   // if i really want an immutable String should i just use c_str?

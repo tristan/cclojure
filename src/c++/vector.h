@@ -4,7 +4,7 @@
 #include <list>
 #include <vector>
 
-class Vector : public Seq {
+class Vector : public Object, public Seq {
 public:
   Vector();
   Vector(std::shared_ptr<Seq> items);
@@ -17,6 +17,7 @@ public:
   std::shared_ptr<Seq> rest() const override;
   std::shared_ptr<Seq> cons(std::shared_ptr<Object> o) const override;
   
+  bool instanceof(const std::type_info &info) const override;
 private:
   // TODO: vectors are actually a lot more complex than this
   // but i'm going to worry about complex implementation

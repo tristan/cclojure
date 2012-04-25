@@ -3,7 +3,7 @@
 
 #include <list>
 
-class List : public Seq {
+class List : public Object, public Seq {
 public:
   List();
   // since the object here could be nil (i.e. nullptr) 
@@ -19,6 +19,7 @@ public:
   std::shared_ptr<Seq> rest() const override;
   std::shared_ptr<Seq> cons(std::shared_ptr<Object> o) const override;
   
+  bool instanceof(const std::type_info &info) const override;
 private:
   // shared ptr's should be ok here, as long as we don't
   // allow any calls which may mutate the list

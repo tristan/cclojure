@@ -46,3 +46,10 @@ std::shared_ptr<Seq> List::cons(std::shared_ptr<Object> o) const {
 std::string List::toString() const {
   return utils::print_string( shared_from_this() );
 }
+
+bool List::instanceof(const std::type_info &info) const {
+  return (
+          typeid(Seq) == info ||
+          typeid(List) == info
+          );
+}

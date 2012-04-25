@@ -20,24 +20,26 @@ bool Object::operator==(const Object &o) const {
   return this == &o;
 }
 
-bool Object::instanceof(const std::type_info &info) {
+/* making this pure virtual for now
+bool Object::instanceof(const std::type_info &info) const {
   return (typeid(Object) == info);
 }
+*/
 
 /*int Object::compareTo(const Object &o) const {
   // this is a simple way to simulate the Comparaible interface in java
   throw std::string(typeid(this).name()) + " has no natural ordering (i.e. does not implement compareTo).";
   }*/
 
-bool Comparable::operator<(const Object &o) const {
+bool Comparable::operator<(const Comparable &o) const {
   return this->compareTo(o) < 0;
 }
 
-bool Comparable::operator>(const Object &o) const {
+bool Comparable::operator>(const Comparable &o) const {
   return this->compareTo(o) > 0;
 }
 
-bool Comparable::operator==(const Object &o) const {
+bool Comparable::operator==(const Comparable &o) const {
   return this->compareTo(o) == 0;
 }
 

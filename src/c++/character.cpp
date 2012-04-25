@@ -16,3 +16,24 @@ bool Character::operator==(const Object &o) const {
     return false;
   }
 }
+
+int Character::compareTo(const Comparable &o) const {
+  if (typeid(o) != typeid(Character)) {
+    throw std::string(typeid(o).name()) + " cannot be cast to Character";
+  }
+  const Character &c = dynamic_cast<const Character &>(o);
+  if (this->ch > c.ch) {
+    return 1;
+  }
+  if (this->ch < c.ch) {
+    return -1;
+  }
+  return 0;
+}
+
+bool Character::instanceof(const std::type_info &info) const {
+  return (
+          typeid(Character) == info ||
+          typeid(Comparable) == info
+          );
+}

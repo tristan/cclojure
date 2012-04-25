@@ -15,8 +15,7 @@ public:
   std::string toString() const override;
   size_t count() const;
 
-
-
+  bool instanceof(const std::type_info &info) const override;
 private:
   // TODO: java clojure's impl is more complex
   std::map<std::shared_ptr<Object>,std::shared_ptr<Object>,compare_hashcodes> map;

@@ -33,3 +33,9 @@ std::string Set::toString() const {
   out << "}";
   return out.str(); //utils::print_string( shared_from_this() );
 }
+
+bool Set::instanceof(const std::type_info &info) const {
+  return (
+          typeid(Set) == info
+          );
+}

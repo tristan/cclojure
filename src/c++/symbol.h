@@ -2,7 +2,7 @@
 #define _SYMBOL_H
 
 // symbol class
-class Symbol : public Comparable {
+class Symbol : public Object, public Comparable {
 public:
   // TODO: i'm going to make the constructor here public
   // but it may be better to do something like: http://stackoverflow.com/a/8147326
@@ -21,7 +21,9 @@ public:
 
   bool operator==(const Object& o) const override;
 
-  int compareTo(const Object& o) const override;
+  int compareTo(const Comparable& o) const override;
+
+  bool instanceof(const std::type_info &info) const override;
 
   // I thought about removing these since they're simply helper functions
   // and don't provide any real value, but I came to the conclusion that

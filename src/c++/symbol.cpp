@@ -76,9 +76,9 @@ bool Symbol::operator==(const Object& o) const {
   return this->name == s.name && this->ns == s.ns;
 }
 
-int Symbol::compareTo(const Object& o) const {
+int Symbol::compareTo(const Comparable& o) const {
   if (typeid(o) != typeid(Symbol)) {
-    throw std::string(typeid(o).name()) + " cannot be case to Symbol";
+    throw std::string(typeid(o).name()) + " cannot be cast to Symbol";
   }
   const Symbol &s = dynamic_cast<const Symbol&>(o);
   if (this->ns == "" && s.ns != "") {
@@ -102,4 +102,11 @@ int Symbol::compareTo(const Object& o) const {
     return 1;
   }
   return 0;
+}
+
+bool Symbol::instanceof(const std::type_info &info) const {
+  return (
+          typeid(Symbol) == info ||
+          typeid(Comparable) == info
+          );
 }

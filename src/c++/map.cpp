@@ -54,3 +54,9 @@ std::string Map::toString() const {
   out << "}";
   return out.str(); //utils::print_string( shared_from_this() );
 }
+
+bool Map::instanceof(const std::type_info &info) const {
+  return (
+          typeid(Map) == info
+          );
+}

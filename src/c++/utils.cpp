@@ -7,63 +7,26 @@
 // least pre-c++11) that this is a bad way
 // to do this
 
-// returns true if the Object is a string. used
-// so the repl can wrap it in double quotes when
-// printing the value
-inline bool is_string_type(const std::shared_ptr<const Object> &o) {
-  return typeid(*o) == typeid(String);
-}
-
-inline bool is_char_type(const std::shared_ptr<const Object> &o) {
-  return typeid(*o) == typeid(Character);
-}
-
-inline bool is_map_type(const std::shared_ptr<const Object> &o) {
-  return typeid(*o) == typeid(Map);
-}
-
-inline bool is_set_type(const std::shared_ptr<const Object> &o) {
-  return typeid(*o) == typeid(Set);
-}
-
-inline bool is_regex_pattern_type(const std::shared_ptr<const Object> &o) {
-  return typeid(*o) == typeid(Pattern);
-}
-
 // returns true if the Object is a type the repl
 // can simply print
 inline bool is_plain_type(const std::shared_ptr<const Object> &o) {
   return 
-    typeid(*o) == typeid(Integer) ||
-    typeid(*o) == typeid(Irrational) ||
-    typeid(*o) == typeid(Ratio) ||
-    typeid(*o) == typeid(Boolean) ||
-    typeid(*o) == typeid(Symbol) ||
-    typeid(*o) == typeid(Keyword)
+    o->instanceof(typeid(Integer)) ||
+    o->instanceof(typeid(Irrational)) ||
+    o->instanceof(typeid(Ratio)) ||
+    o->instanceof(typeid(Boolean)) ||
+    o->instanceof(typeid(Symbol)) ||
+    o->instanceof(typeid(Keyword))
     ;
 }
 
 inline std::tuple<int,int> seq_type(const std::shared_ptr<const Object> &o) {
-  if (typeid(*o) == typeid(List)) {
+  if (o->instanceof(typeid(List))) {
     return std::tuple<int,int>{'(', ')'};
-  } else if (typeid(*o) == typeid(Vector)) {
+  } else if (o->instanceof(typeid(Vector))) {
     return std::tuple<int,int>{'[', ']'};
   }
   return std::tuple<int,int>{ 0, 0 }; 
-}
-
-// returns whether or not the object supports metadata (i.e. implements IMeta)
-// TODO: note that this is very hard-coded, which may be ok since we don't
-// really expect any new class types as of yet, but wont allow for easy
-// expansion
-bool utils::supports_meta(const std::shared_ptr<const Object> &o) {
-  return 
-    typeid(*o) == typeid(Vector) ||
-    typeid(*o) == typeid(Map) ||
-    typeid(*o) == typeid(Set) ||
-    typeid(*o) == typeid(List) ||
-    typeid(*o) == typeid(Symbol)
-    ;
 }
 
 // TODO: const <const> & ????????
@@ -88,19 +51,19 @@ void utils::print(const std::shared_ptr<const Object> &o, std::ostream &out) {
         out << " ";
         print(r->first(), out);
         r = r->rest();
-      } while (r != Object::nil);
+      } while (r != nullptr);
     }
     out << (char)std::get<1>(brackets);
-  } else if (is_map_type(o) || is_set_type(o)) {
+  } else if (o->instanceof(typeid(Map)) || o->instanceof(typeid(Set))) {
     // TODO: map/set->toString() needs to call this instead of the other way around
     // this should be done once i figure out the details of how to represent
     // the interface tree that java clojure uses in an easy and efficient way
     out << o->toString();
-  } else if (is_string_type(o)) {
+  } else if (o->instanceof(typeid(String))) {
     out << "\"" << *o << "\"";
-  } else if (is_regex_pattern_type(o)) {
+  } else if (o->instanceof(typeid(Pattern))) {
     out << "#\"" << o->toString() << "\"";
-  } else if (is_char_type(o)) {
+  } else if (o->instanceof(typeid(Character))) {
     out << "\\";
     std::string s = o->toString();
     if (s[0] == '\n') {

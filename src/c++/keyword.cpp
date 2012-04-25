@@ -35,6 +35,12 @@ size_t Keyword::hashCode() const {
   return hash;
 }
 
+bool Keyword::instanceof(const std::type_info &info) const {
+  return (
+          typeid(Keyword) == info
+          );
+}
+
 // initialise needed because there's no default constructor
 // for Symbol thus this->sym can't be initialized
 Keyword::Keyword(std::shared_ptr<Symbol> sym) : sym(sym) {

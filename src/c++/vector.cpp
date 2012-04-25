@@ -3,7 +3,7 @@
 Vector::Vector() {}
 
 Vector::Vector(std::shared_ptr<Seq> items) {
-  for (; items != Object::nil ; items = items->rest()) {
+  for (; items != nullptr ; items = items->rest()) {
     vec.push_back(items->first());
   }
 }
@@ -49,3 +49,9 @@ std::string Vector::toString() const {
   return utils::print_string( shared_from_this() );
 }
 
+bool Vector::instanceof(const std::type_info &info) const {
+  return (
+          typeid(Vector) == info ||
+          typeid(Seq) == info
+          );
+}

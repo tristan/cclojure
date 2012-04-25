@@ -11,7 +11,7 @@ int cpp_repl(std::istream &in) {
   std::shared_ptr<Object> eof_value = std::make_shared<Integer>(-1L);
   std::cout << "Clojure c++ 1.0a" << std::endl;
   while (1) {
-    std::cout << ns->getName() << "=> ";
+    std::cout << ns->toString() << "=> ";
     try {
       // read
       auto o = LispReader::read(in, false, eof_value, false);

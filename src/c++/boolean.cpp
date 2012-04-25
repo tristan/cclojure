@@ -15,3 +15,9 @@ bool Boolean::operator==(const Object &o) const {
     return false;
   }
 }
+
+bool Boolean::instanceof(const std::type_info &info) const {
+  return (
+          typeid(Boolean) == info
+          );
+}
