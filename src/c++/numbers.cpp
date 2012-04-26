@@ -85,6 +85,24 @@ std::string Irrational::toString() const {
   return sstm.str();
 }
 
+size_t Irrational::hashCode() const {
+  // taken from openjdk's Double.hashCode implementation
+  union {
+    long l;
+    double d;
+  } u;
+  u.d = this->value;
+
+  long bits = u.l;
+  if ( ((bits & 0x7FF0000000000000L) ==
+        0x7FF0000000000000L) &&
+       (bits & 0x000FFFFFFFFFFFFFL) != 0L) {
+    bits = 0x7ff8000000000000L;
+  }
+  int r = (int)(bits ^ (bits >> 32));
+  return r;
+}
+
 int Irrational::compareTo(const Object& o) const {
   if (typeid(o) != typeid(Irrational)) {
     throw std::string(typeid(o).name()) + " cannot be case to Irrational";
@@ -118,6 +136,10 @@ std::string Ratio::toString() const {
   std::stringstream sstm;
   sstm << num->toString() << "/" << den->toString();
   return sstm.str();
+}
+
+size_t Ratio::hashCode() const {
+  return this->num->hashCode() ^ this->den->hashCode();
 }
 
 int Ratio::compareTo(const Object& o) const {

@@ -28,7 +28,7 @@ public:
   Irrational(double i);
 
   std::string toString() const override;
-  //size_t hashCode() const override;
+  size_t hashCode() const override;
   int compareTo(const Object& o) const override;
 
 private:
@@ -43,7 +43,7 @@ public:
   Ratio(const Integer &num, const Integer &den);
 
   std::string toString() const override;
-  //size_t hashCode() const override;
+  size_t hashCode() const override;
   int compareTo(const Object& o) const override;
 
 private:
