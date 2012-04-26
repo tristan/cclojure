@@ -22,6 +22,14 @@ inline bool is_map_type(const std::shared_ptr<const Object> &o) {
   return typeid(*o) == typeid(Map);
 }
 
+inline bool is_set_type(const std::shared_ptr<const Object> &o) {
+  return typeid(*o) == typeid(Set);
+}
+
+inline bool is_regex_pattern_type(const std::shared_ptr<const Object> &o) {
+  return typeid(*o) == typeid(Pattern);
+}
+
 // returns true if the Object is a type the repl
 // can simply print
 inline bool is_plain_type(const std::shared_ptr<const Object> &o) {
@@ -69,14 +77,15 @@ void utils::print(const std::shared_ptr<const Object> &o, std::ostream &out) {
       } while (r != Object::nil);
     }
     out << (char)std::get<1>(brackets);
-  } else if (is_map_type(o)) {
-    //const std::shared_ptr<const Map> m = std::dynamic_pointer_cast<const Map>(o);
-    // TODO: map->toString() needs to call this instead of the other way around
+  } else if (is_map_type(o) || is_set_type(o)) {
+    // TODO: map/set->toString() needs to call this instead of the other way around
     // this should be done once i figure out the details of how to represent
-    // the interface tree that java clojure uses
+    // the interface tree that java clojure uses in an easy and efficient way
     out << o->toString();
   } else if (is_string_type(o)) {
     out << "\"" << *o << "\"";
+  } else if (is_regex_pattern_type(o)) {
+    out << "#\"" << o->toString() << "\"";
   } else if (is_char_type(o)) {
     out << "\\";
     std::string s = o->toString();

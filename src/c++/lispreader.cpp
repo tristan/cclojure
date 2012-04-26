@@ -38,6 +38,7 @@ std::shared_ptr<Object> read_set(std::istream &in);
 std::shared_ptr<Object> read_number(std::istream &in);
 std::shared_ptr<Object> read_comment(std::istream &in);
 std::shared_ptr<Object> read_character(std::istream &in);
+std::shared_ptr<Object> read_regex(std::istream &in);
 
 // TODO: can we replace macro_fn with std::function ?
 using macro_fn = std::shared_ptr<Object>(*)(std::istream &);
@@ -83,6 +84,36 @@ macro_fn getmacro(int c) {
     return read_comment;
   } else if (c == '\\') {
     return read_character;
+  } else if (c == '^') {
+    return [] (std::istream &in) -> std::shared_ptr<Object> {
+      throw "TODO: implement meta reader";
+    };
+  } else if (c == '`') {
+    return [] (std::istream &in) -> std::shared_ptr<Object> {
+      throw "TODO: implement syntax quote reader";
+    };
+  } else if (c == '~') {
+    // unquote reader
+    return [] (std::istream &in) -> std::shared_ptr<Object> {
+      int ch = in.get();
+      if (in.eof()) {
+        throw "EOF while reading character";
+      }
+      if (ch == '@') {
+        auto o = read(in, true, Object::nil, true);
+        auto l = std::make_shared<List>(o);
+        return l->cons(Symbol::create("clojure.core", "unquote-splicing"));
+      } else {
+        in.unget();
+        auto o = read(in, true, Object::nil, true);
+        auto l = std::make_shared<List>(o);
+        return l->cons(Symbol::create("clojure.core", "unquote"));
+      }
+    };
+  }  else if (c == '%') {
+    return [] (std::istream &in) -> std::shared_ptr<Object> {
+      throw "TODO: implement arg reader";
+    };
   } else if (c == '#') {
     // dispatch macro reader (lambda)
     // TODO: is this over-using lambdas? what is the overhead of a lambda
@@ -94,7 +125,26 @@ macro_fn getmacro(int c) {
       }
       if (c == '{') {
         return read_set(in);
+      } else if (c == '^') {
+        throw "TODO: implement meta reader";
+      } else if (c == '\'') {
+        throw "TODO: implement var reader";
+      } else if (c == '"') {
+        return read_regex(in);
+      } else if (c == '(') {
+        throw "TODO: implement function reader";
+      } else if (c == '=') {
+        throw "TODO: implement eval reader";
+      } else if (c == '!') {
+        return read_comment(in);
+      } else if (c == '<') {
+        throw "Unreadable form";
+      } else if (c == '_') {
+        read(in, true, Object::nil, true);
+        return NOOP;
       } else {
+        // try ctor reader
+        // TODO: implement ctor reader
       }
       throw "No dispatch macro for: " + std::string{ (char)c };
     };
@@ -314,6 +364,29 @@ std::shared_ptr<Object> read_comment(std::istream &in) {
     c = in.get();
   } while (!in.eof() && c != '\n' && c != '\r');
   return NOOP;
+}
+
+std::shared_ptr<Object> read_regex(std::istream &in) {
+  std::stringstream buf;
+  std::function<int ()> getc = [&in] () -> int { 
+    int c = in.get();
+    if (in.eof()) {
+      throw "EOF while reading regex";
+    }
+    return c;
+  };
+  while (1) {
+    int c = getc();
+    if (c == '"') {
+      return std::make_shared<Pattern>(buf.str());
+    }
+    buf.put(c);
+    if (c == '\\') {
+      c = getc();
+      buf.put(c);
+    }
+  }
+  return Object::nil;
 }
 
 enum class number_type : int {

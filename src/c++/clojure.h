@@ -58,6 +58,7 @@ struct compare_hashcodes {
 #include "boolean.h"
 #include "string.h"
 #include "character.h"
+#include "regex.h"
 
 #include "symbol.h"
 #include "keyword.h"
