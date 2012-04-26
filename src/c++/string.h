@@ -2,7 +2,7 @@
 #define _STRING_H
 
 // String wrapper class
-class String : public Object {
+class String : public Comparable {
 public:
   String(const std::string& s);
   String(const String& s);

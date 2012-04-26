@@ -19,6 +19,22 @@ Map::Map(const std::list<std::shared_ptr<Object> > &init) {
   }
 }
 
+/* tried this, but i couldn't get it to work with make_shared
+Map::Map(std::initializer_list<std::shared_ptr<Object> > init) {
+  auto i = init.begin();
+  while (i != init.end()) {
+    // shouldn't need to check that the values exist
+    // as this is done by the lispreader
+    std::shared_ptr<Object> key = *i++;
+    std::shared_ptr<Object> val = *i++;
+    auto r = map.insert(std::make_pair(key, val));
+    if (r.second == false) {
+      throw "Duplicate key: " + key->toString();
+    }
+  }  
+}
+*/
+
 size_t Map::count() const {
   return map.size();
 }

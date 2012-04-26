@@ -20,22 +20,30 @@ bool Object::operator==(const Object &o) const {
   return this == &o;
 }
 
-int Object::compareTo(const Object &o) const {
-  // this is a simple way to simulate the Comparaible interface in java
-  throw std::string(typeid(this).name()) + " has no natural ordering (i.e. does not implement compareTo).";
+bool Object::instanceof(const std::type_info &info) {
+  return (typeid(Object) == info);
 }
 
-bool Object::operator<(const Object &o) const {
+/*int Object::compareTo(const Object &o) const {
+  // this is a simple way to simulate the Comparaible interface in java
+  throw std::string(typeid(this).name()) + " has no natural ordering (i.e. does not implement compareTo).";
+  }*/
+
+bool Comparable::operator<(const Object &o) const {
   return this->compareTo(o) < 0;
 }
 
-bool Object::operator>(const Object &o) const {
+bool Comparable::operator>(const Object &o) const {
   return this->compareTo(o) > 0;
 }
 
+bool Comparable::operator==(const Object &o) const {
+  return this->compareTo(o) == 0;
+}
+
 // Comparator for collection that use compareTo to sort/match the keys/values
-bool compare_object_in_shared_ptr::operator()(const std::shared_ptr<Object>& lhs, 
-                                              const std::shared_ptr<Object>& rhs) const {
+bool compare_object_in_shared_ptr::operator()(const std::shared_ptr<Comparable>& lhs, 
+                                              const std::shared_ptr<Comparable>& rhs) const {
   return lhs->compareTo(*rhs) < 0;
 }
 

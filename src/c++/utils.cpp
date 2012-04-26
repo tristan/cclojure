@@ -52,6 +52,20 @@ inline std::tuple<int,int> seq_type(const std::shared_ptr<const Object> &o) {
   return std::tuple<int,int>{ 0, 0 }; 
 }
 
+// returns whether or not the object supports metadata (i.e. implements IMeta)
+// TODO: note that this is very hard-coded, which may be ok since we don't
+// really expect any new class types as of yet, but wont allow for easy
+// expansion
+bool utils::supports_meta(const std::shared_ptr<const Object> &o) {
+  return 
+    typeid(*o) == typeid(Vector) ||
+    typeid(*o) == typeid(Map) ||
+    typeid(*o) == typeid(Set) ||
+    typeid(*o) == typeid(List) ||
+    typeid(*o) == typeid(Symbol)
+    ;
+}
+
 // TODO: const <const> & ????????
 // find out what all of this really means!
 // should all of my shared_ptr's be to const Objects?

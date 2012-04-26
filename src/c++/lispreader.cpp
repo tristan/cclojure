@@ -39,6 +39,13 @@ std::shared_ptr<Object> read_number(std::istream &in);
 std::shared_ptr<Object> read_comment(std::istream &in);
 std::shared_ptr<Object> read_character(std::istream &in);
 std::shared_ptr<Object> read_regex(std::istream &in);
+std::shared_ptr<Object> read_meta(std::istream &in);
+
+std::shared_ptr<Seq> wrap_read(std::istream &in, std::shared_ptr<Symbol> sym) {
+  auto o = read(in, true, Object::nil, true);
+  auto l = std::make_shared<List>(o);
+  return l->cons(sym);
+}
 
 // TODO: can we replace macro_fn with std::function ?
 using macro_fn = std::shared_ptr<Object>(*)(std::istream &);
@@ -70,24 +77,18 @@ macro_fn getmacro(int c) {
     };
   } else if (c == '\'') {
     return [] (std::istream &in) -> std::shared_ptr<Object> {
-      auto o = read(in, true, Object::nil, true);
-      auto l = std::make_shared<List>(o);
-      return l->cons(Symbol::create("quote"));
+      return wrap_read(in, Symbol::create("quote"));
     };
   } else if (c == '@') {
     return [] (std::istream &in) -> std::shared_ptr<Object> {
-      auto o = read(in, true, Object::nil, true);
-      auto l = std::make_shared<List>(o);
-      return l->cons(Symbol::create("clojure.core", "deref"));
+      return wrap_read(in, Symbol::create("clojure.core", "deref"));
     };
   } else if (c == ';') {
     return read_comment;
   } else if (c == '\\') {
     return read_character;
   } else if (c == '^') {
-    return [] (std::istream &in) -> std::shared_ptr<Object> {
-      throw "TODO: implement meta reader";
-    };
+    return read_meta;
   } else if (c == '`') {
     return [] (std::istream &in) -> std::shared_ptr<Object> {
       throw "TODO: implement syntax quote reader";
@@ -100,14 +101,10 @@ macro_fn getmacro(int c) {
         throw "EOF while reading character";
       }
       if (ch == '@') {
-        auto o = read(in, true, Object::nil, true);
-        auto l = std::make_shared<List>(o);
-        return l->cons(Symbol::create("clojure.core", "unquote-splicing"));
+        return wrap_read(in, Symbol::create("clojure.core", "unquote-splicing"));
       } else {
         in.unget();
-        auto o = read(in, true, Object::nil, true);
-        auto l = std::make_shared<List>(o);
-        return l->cons(Symbol::create("clojure.core", "unquote"));
+        return wrap_read(in, Symbol::create("clojure.core", "unquote"));
       }
     };
   }  else if (c == '%') {
@@ -126,9 +123,9 @@ macro_fn getmacro(int c) {
       if (c == '{') {
         return read_set(in);
       } else if (c == '^') {
-        throw "TODO: implement meta reader";
+        return read_meta(in);
       } else if (c == '\'') {
-        throw "TODO: implement var reader";
+        return wrap_read(in, Symbol::create("var"));
       } else if (c == '"') {
         return read_regex(in);
       } else if (c == '(') {
@@ -387,6 +384,25 @@ std::shared_ptr<Object> read_regex(std::istream &in) {
     }
   }
   return Object::nil;
+}
+
+std::shared_ptr<Object> read_meta(std::istream &in) {
+  auto meta = read(in, true, Object::nil, true);
+  if (typeid(*meta) == typeid(Symbol) || typeid(*meta) == typeid(String)) {
+    meta = std::make_shared<Map>(std::list<std::shared_ptr<Object>>{Keyword::create("tag"), meta});
+  } else if (typeid(*meta) == typeid(Keyword)) {
+    meta = std::make_shared<Map>(std::list<std::shared_ptr<Object>>{meta, Object::T});
+  } else if (typeid(*meta) != typeid(Map)) { // TODO: map interface
+    throw "Metadata must be Symbol,Keyword,String or Map";
+  }
+  auto o = read(in, true, Object::nil, true);
+  if (o->hasmetadata()) {
+    // TODO: line number support
+    // TODO: refs
+    // merge metadata
+    auto ometa = std::dynamic_pointer_cast<Meta>(o)->meta();
+  }
+  throw "Metadata can only be applied to IMetas";
 }
 
 enum class number_type : int {

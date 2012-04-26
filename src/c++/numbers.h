@@ -1,7 +1,7 @@
 #ifndef _NUMBERS_H
 #define _NUMBERS_H
 
-class Number : public Object {
+class Number : public Comparable {
   //std::string toString() const override;
 protected:
   Number() {};

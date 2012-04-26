@@ -2,7 +2,7 @@
 #define _SYMBOL_H
 
 // symbol class
-class Symbol : public Object {
+class Symbol : public Comparable {
 public:
   // TODO: i'm going to make the constructor here public
   // but it may be better to do something like: http://stackoverflow.com/a/8147326
