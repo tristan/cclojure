@@ -16,6 +16,10 @@ Set::Set(const std::list<std::shared_ptr<Object> > &init) {
   }
 }
 
+Set::Set(std::shared_ptr<Map> meta, 
+         const std::set<std::shared_ptr<Object>,compare_hashcodes> &set)
+  : _meta(meta), set(set) {}
+
 size_t Set::count() const {
   return set.size();
 }
@@ -36,6 +40,15 @@ std::string Set::toString() const {
 
 bool Set::instanceof(const std::type_info &info) const {
   return (
-          typeid(Set) == info
+          typeid(Set) == info ||
+          typeid(Meta) == info
           );
+}
+
+std::shared_ptr<Map> Set::meta() const {
+  return _meta;
+}
+
+std::shared_ptr<Object> Set::withMeta(std::shared_ptr<Map> meta) const {
+  return std::make_shared<Set>(meta, set);
 }

@@ -15,6 +15,9 @@ Vector::Vector(const std::list<std::shared_ptr<Object> > &init) {
   }
 }
 
+Vector::Vector(std::shared_ptr<Map> meta, const std::vector<std::shared_ptr<Object> > &vec)
+  : _meta(meta), vec(vec) {}
+
 size_t Vector::count() const {
   return vec.size();
 }
@@ -52,6 +55,15 @@ std::string Vector::toString() const {
 bool Vector::instanceof(const std::type_info &info) const {
   return (
           typeid(Vector) == info ||
-          typeid(Seq) == info
+          typeid(Seq) == info ||
+          typeid(Meta) == info
           );
+}
+
+std::shared_ptr<Map> Vector::meta() const {
+  return _meta;
+}
+
+std::shared_ptr<Object> Vector::withMeta(std::shared_ptr<Map> meta) const {
+  return std::make_shared<Vector>(meta, vec);
 }

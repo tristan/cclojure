@@ -26,6 +26,9 @@ List::List(const std::list<std::shared_ptr<Object> > &init)
   }
 }
 
+List::List(std::shared_ptr<Map> meta, std::shared_ptr<Object> first, std::shared_ptr<List> rest)
+  : _meta(meta), _first(first), _rest(rest) {}
+
 size_t List::count() const {
   return _count;
 }
@@ -53,3 +56,12 @@ bool List::instanceof(const std::type_info &info) const {
           typeid(List) == info
           );
 }
+
+std::shared_ptr<Map> List::meta() const {
+  return _meta;
+}
+
+std::shared_ptr<Object> List::withMeta(std::shared_ptr<Map> meta) const {
+  return std::make_shared<List>(meta, _first, _rest);
+}
+

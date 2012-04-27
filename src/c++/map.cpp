@@ -35,6 +35,10 @@ Map::Map(std::initializer_list<std::shared_ptr<Object> > init) {
 }
 */
 
+Map::Map(std::shared_ptr<Map> meta, 
+         const std::map<std::shared_ptr<Object>,std::shared_ptr<Object>,compare_hashcodes> &map) 
+  : _meta(meta), map(map) {}
+
 size_t Map::count() const {
   return map.size();
 }
@@ -57,6 +61,15 @@ std::string Map::toString() const {
 
 bool Map::instanceof(const std::type_info &info) const {
   return (
-          typeid(Map) == info
+          typeid(Map) == info ||
+          typeid(Meta) == info
           );
+}
+
+std::shared_ptr<Map> Map::meta() const {
+  return _meta;
+}
+
+std::shared_ptr<Object> Map::withMeta(std::shared_ptr<Map> meta) const {
+  return std::make_shared<Map>(meta, map);
 }

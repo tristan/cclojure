@@ -82,6 +82,14 @@ public:
   virtual std::shared_ptr<Object> withMeta(std::shared_ptr<Map> meta) const = 0;
 };
 
+// TODO: play with this...
+class Iterable {
+public:
+  class iterator;
+  virtual iterator begin() const = 0;
+  virtual iterator end() const = 0;
+};
+
 struct compare_object_in_shared_ptr {
   bool operator()(const std::shared_ptr<Comparable>& lhs, const std::shared_ptr<Comparable>& rhs) const;
 };
