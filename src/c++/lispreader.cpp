@@ -403,10 +403,16 @@ std::shared_ptr<Object> read_meta(std::istream &in) {
     // TODO: refs
     // merge metadata
     auto ometa = std::dynamic_pointer_cast<Meta>(o)->meta();
-    //for (std::shared_ptr<Seq> s = utils::seq(meta); s != nullptr; s = s->rest()) {
-      // TODO: mapentry
-      // assoc meta keys into ometa
-    //}
+    for (auto it = std::dynamic_pointer_cast<Map>(meta)->begin(); 
+        it != std::dynamic_pointer_cast<Map>(meta)->end();
+        ++it) {
+      auto r = *it;
+      if (ometa == nullptr) {
+        ometa = std::make_shared<Map>(std::list<std::shared_ptr<Object> >{ std::get<0>(r), std::get<1>(r) });
+      } else {
+        ometa = std::dynamic_pointer_cast<Map>(ometa)->assoc(std::get<0>(r), std::get<1>(r));
+      }
+    }
     return std::dynamic_pointer_cast<Meta>(o)->withMeta(ometa);
   }
   throw "Metadata can only be applied to IMetas";

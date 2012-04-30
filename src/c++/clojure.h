@@ -82,12 +82,15 @@ public:
   virtual std::shared_ptr<Object> withMeta(std::shared_ptr<Map> meta) const = 0;
 };
 
-// TODO: play with this...
 class Iterable {
+  /* NOTE: this doesn't work when we need a class
+     but the empty class may still be useful, so
+     leaving it here for now.
 public:
   class iterator;
   virtual iterator begin() const = 0;
   virtual iterator end() const = 0;
+  */
 };
 
 struct compare_object_in_shared_ptr {

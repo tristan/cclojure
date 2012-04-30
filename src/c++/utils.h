@@ -6,7 +6,6 @@ namespace utils {
   std::string print_string(const std::shared_ptr<const Object> &o);
 
   std::shared_ptr<Seq> seq(const std::shared_ptr<const Object> &o);
-  bool supports_meta(const std::shared_ptr<const Object> &o);
 }
 
 #endif

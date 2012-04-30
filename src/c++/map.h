@@ -6,7 +6,7 @@
 #include <set>
 //#include <initializer_list>
 
-class Map : public Object, public Meta {
+class Map : public Object, public Meta, public Iterable {
 public:
   Map();
   Map(const std::list<std::shared_ptr<Object> > &init);
@@ -17,10 +17,28 @@ public:
   std::string toString() const override;
   size_t count() const;
 
+  // TODO: override something!
+  std::shared_ptr<Map> assoc(std::shared_ptr<Object>,std::shared_ptr<Object>) const;
+
   bool instanceof(const std::type_info &info) const override;
 
   std::shared_ptr<Map> meta() const override;
   std::shared_ptr<Object> withMeta(std::shared_ptr<Map> meta) const override;
+
+  class iterator {
+  public:
+    iterator(std::map<std::shared_ptr<Object>,std::shared_ptr<Object>,compare_hashcodes>::const_iterator it);
+    std::pair<const std::shared_ptr<Object>,std::shared_ptr<Object> > operator*();
+    iterator& operator++();
+    bool operator==(const iterator& rhs);
+    bool operator!=(const iterator& rhs);
+    
+  private:
+    std::map<std::shared_ptr<Object>,std::shared_ptr<Object>,compare_hashcodes>::const_iterator it;
+  };
+
+  iterator begin() const;
+  iterator end() const;
 private:
   // TODO: java clojure's impl is more complex
   std::map<std::shared_ptr<Object>,std::shared_ptr<Object>,compare_hashcodes> map;

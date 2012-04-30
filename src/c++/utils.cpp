@@ -86,6 +86,12 @@ void utils::print(const std::shared_ptr<const Object> &o, std::ostream &out) {
   } else {
     out << "#<" << typeid(*o).name() << ": " << *o << ">";
   }
+  if (o->instanceof(typeid(Meta))) {
+    auto m = std::dynamic_pointer_cast<const Meta>(o)->meta();
+    if (m != nullptr) {
+      out << " ^" << m->toString();
+    }
+  }
   //out << " (" << std::hex << o << ")";
 }
 
@@ -93,4 +99,8 @@ std::string utils::print_string(const std::shared_ptr<const Object> &o) {
   std::stringstream ss;
   print(o, ss);
   return ss.str();
+}
+
+std::shared_ptr<Seq> seq(const std::shared_ptr<const Object> &o) {
+  return nullptr;
 }

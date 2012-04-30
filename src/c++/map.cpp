@@ -3,9 +3,9 @@
 #include <sstream>
 #include <iostream>
 
-Map::Map() {}
+Map::Map() : _meta(nullptr) {}
 
-Map::Map(const std::list<std::shared_ptr<Object> > &init) {
+Map::Map(const std::list<std::shared_ptr<Object> > &init) : _meta(nullptr) {
   auto i = init.begin();
   while (i != init.end()) {
     // shouldn't need to check that the values exist
@@ -59,12 +59,21 @@ std::string Map::toString() const {
   return out.str(); //utils::print_string( shared_from_this() );
 }
 
+std::shared_ptr<Map> Map::assoc(std::shared_ptr<Object> key, std::shared_ptr<Object> val) const {
+  std::shared_ptr<Map> rval = std::make_shared<Map>( this->_meta, map );
+  rval->map.insert(std::make_pair(key, val));
+  return rval;
+}
+
 bool Map::instanceof(const std::type_info &info) const {
   return (
           typeid(Map) == info ||
-          typeid(Meta) == info
+          typeid(Meta) == info ||
+          typeid(Iterable) == info
           );
 }
+
+using map_intern_type = std::map<std::shared_ptr<Object>,std::shared_ptr<Object>,compare_hashcodes>;
 
 std::shared_ptr<Map> Map::meta() const {
   return _meta;
@@ -72,4 +81,30 @@ std::shared_ptr<Map> Map::meta() const {
 
 std::shared_ptr<Object> Map::withMeta(std::shared_ptr<Map> meta) const {
   return std::make_shared<Map>(meta, map);
+}
+
+Map::iterator::iterator(map_intern_type::const_iterator it) : it(it) {}
+
+std::pair<const std::shared_ptr<Object>,std::shared_ptr<Object> > Map::iterator::operator*() {
+  return *it;
+}
+  
+Map::iterator& Map::iterator::operator++() {
+  ++it;
+  return *this;
+}
+
+bool Map::iterator::operator==(const Map::iterator& rhs) {
+  return it == rhs.it;
+}
+ 
+bool Map::iterator::operator!=(const Map::iterator& rhs) {
+  return it != rhs.it;
+}
+
+Map::iterator Map::begin() const {
+  return Map::iterator(map.begin());
+}
+Map::iterator Map::end() const {
+  return Map::iterator(map.end());
 }
