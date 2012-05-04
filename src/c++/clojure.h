@@ -109,6 +109,8 @@ struct compare_hashcodes {
 #include "keyword.h"
 #include "namespace.h"
 
+#include "var.h"
+
 #include "numbers.h"
 
 #include "list.h"

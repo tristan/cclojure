@@ -1,12 +1,12 @@
 CLJHOME=$(abspath ../..)
-CXX=clang++
-#CXX=g++
-CXXFLAGS=-std=c++11 -g3 -fno-inline -O0
+#CXX=clang++
+CXX=g++
+CXXFLAGS=-std=c++11 -g3 -fno-inline -O0 -pthread
 CC=$(CXX)
 CFLAGS=$(CXXFLAGS)
 
 EXENAME=cclj
-SRCS = object string boolean character symbol keyword namespace
+SRCS = object string boolean character symbol keyword namespace var
 SRCS += pattern
 SRCS += numbers
 SRCS += list vector map set
