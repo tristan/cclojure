@@ -2,6 +2,7 @@ CLJHOME = $(abspath .)
 #CXX = clang++
 CXX = g++
 CXXFLAGS=-std=c++11 -g3 -fno-inline -O0 -pthread
+#CXXFLAGS=-std=c++11 -v
 #  -I/usr/include/c++/4.7.0/x86_64-unknown-linux-gnu/ -I/usr/include/c++/4.7.0/
 
 default: c++

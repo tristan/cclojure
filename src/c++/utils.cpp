@@ -1,6 +1,15 @@
 #include <tuple>
 #include <sstream>
+#include <atomic>
 #include "clojure.h"
+
+
+namespace utils {
+  std::shared_ptr<Namespace> CLOJURE_NS = Namespace::findOrCreate("clojure.core");
+  std::shared_ptr<Var> CURRENT_NS = std::make_shared<Var>(CLOJURE_NS,
+                                                          Symbol::create("*ns*"),
+                                                          true);
+}                                           
 
 // TODO: learn more about the typeid function
 // and type_info stuff, because it seems (at
@@ -101,6 +110,12 @@ std::string utils::print_string(const std::shared_ptr<const Object> &o) {
   return ss.str();
 }
 
-std::shared_ptr<Seq> seq(const std::shared_ptr<const Object> &o) {
+/*std::shared_ptr<Seq> utils::seq(const std::shared_ptr<const Object> &o) {
   return nullptr;
+  }*/
+
+std::atomic_uint id( 1 );
+
+int utils::nextId() {
+  return id++;
 }

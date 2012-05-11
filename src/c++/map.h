@@ -17,8 +17,10 @@ public:
   std::string toString() const override;
   size_t count() const;
 
-  // TODO: override something!
+  // TODO: all these probably need to override something!
   std::shared_ptr<Map> assoc(std::shared_ptr<Object>,std::shared_ptr<Object>) const;
+  std::pair<std::shared_ptr<Object>,std::shared_ptr<Object> > entryAt(std::shared_ptr<Object> key);
+  std::shared_ptr<Object> valAt(std::shared_ptr<Object> key);
 
   bool instanceof(const std::type_info &info) const override;
 

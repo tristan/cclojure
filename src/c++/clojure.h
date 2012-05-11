@@ -105,18 +105,17 @@ struct compare_hashcodes {
 #include "character.h"
 #include "regex.h"
 
-#include "symbol.h"
-#include "keyword.h"
-#include "namespace.h"
-
-#include "var.h"
-
 #include "numbers.h"
-
 #include "list.h"
 #include "vector.h"
 #include "map.h"
 #include "set.h"
+
+#include "symbol.h"
+#include "keyword.h"
+#include "namespace.h"
+#include "var.h"
+
 
 //#include "seqs.h"
 #include "utils.h"

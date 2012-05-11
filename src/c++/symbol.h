@@ -34,7 +34,8 @@ public:
   static std::unique_ptr<Symbol> create_unique(const std::string &name);
   static std::unique_ptr<Symbol> create_unique(const std::string &ns, 
                                                const std::string &name);
-protected:
+
+public: // to allow easy access
   std::string ns;
   std::string name;
 private:

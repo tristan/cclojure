@@ -3,8 +3,10 @@
 #include <sstream>
 #include <functional>
 #include <list>
+#include <regex>
 #include "clojure.h"
 #include "utf8.h"
+#include "compiler.h"
 #include "lispreader.h"
 
 static inline bool iswhitespace(int c) {
@@ -24,7 +26,10 @@ static inline int hex_digit(char c)
 }
 
 // a special ptr for macros that have no return value
-std::shared_ptr<Object> NOOP = std::make_shared<String>("noop");
+std::shared_ptr<Object> NOOP = std::make_shared<Symbol>("noop");
+
+std::shared_ptr<Var> GENSYM_ENV = Var::createDynamic(nullptr);
+std::shared_ptr<Var> ARG_ENV = Var::createDynamic(nullptr);
 
 std::shared_ptr<Object> read(std::istream &in, bool eof_is_error, 
                              std::shared_ptr<Object> eof_value, bool is_recursive);
@@ -169,6 +174,48 @@ long read_unicode_char(const std::string &token, int offset, int length, int bas
     uc = uc * base + d;
   }
   return uc;
+}
+
+std::shared_ptr<Object> syntax_quote(std::shared_ptr<Object> form) {
+  std::shared_ptr<Object> ret = nullptr;
+  if (Compiler::isSpecial(form)) {
+    ret = std::shared_ptr<List>( new List { Compiler::QUOTE, form } );
+  } else if (form->instanceof(typeid(Symbol))) {
+    std::shared_ptr<Symbol> sym = std::dynamic_pointer_cast<Symbol>(form);
+    if (sym->ns == "" && sym->name.back() == '#') {
+      auto gmap = std::dynamic_pointer_cast<Map>(GENSYM_ENV->deref());
+      if (gmap == nullptr) {
+        throw "Gensym literal not in syntax-quote";
+      }
+      auto gs = std::dynamic_pointer_cast<Symbol>(gmap->valAt(sym));
+      if (gs == nullptr) {
+        gs = Symbol::create("", sym->name.substr(0, sym->name.size() - 1) +
+                            "__" + std::to_string(utils::nextId()) + "__auto__");
+        GENSYM_ENV->set(gmap->assoc(sym, gs));
+      }
+      sym = gs;
+    } else if (sym->ns == "" && sym->name.back() == '.') {
+      auto csym = Symbol::create("", sym->name.substr(0, sym->name.size() - 1));
+      csym = Compiler::resolveSymbol(csym);
+      sym = Symbol::create("", csym->name + ".");
+    } else if (sym->ns == "" && sym->name.front() == '.') {
+      // simply quote method names
+    } else {
+      std::shared_ptr<Object> maybeClass = nullptr;
+      if (sym->ns != "") {
+        maybeClass = Compiler::currentNS()->getMapping(Symbol::create("", sym->ns));
+      }
+      if (maybeClass != nullptr) {
+        if (false) {
+          // TODO: we have nothing to represent Class objects yet
+        } else {
+          sym = Compiler::resolveSymbol(sym);
+        }
+      }
+    }
+    ret = std::shared_ptr<List>( new List { Compiler::QUOTE, sym } );
+  }
+  return ret;
 }
 
 std::shared_ptr<Object> read_character(std::istream &in) {

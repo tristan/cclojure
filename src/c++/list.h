@@ -2,6 +2,7 @@
 #define _CLJ_LIST_H
 
 #include <list>
+#include <initializer_list>
 
 class List : public Object, public Seq, public Meta {
 public:
@@ -12,6 +13,8 @@ public:
   List(const std::list<std::shared_ptr<Object> > &init);
   List(std::shared_ptr<Object> first, std::shared_ptr<List> rest);
   List(std::shared_ptr<Map> meta, std::shared_ptr<Object> first, std::shared_ptr<List> rest);
+
+  List(std::initializer_list<std::shared_ptr<Object> > init);
 
   std::string toString() const override;
 

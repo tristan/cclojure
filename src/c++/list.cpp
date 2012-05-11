@@ -29,6 +29,12 @@ List::List(const std::list<std::shared_ptr<Object> > &init)
 List::List(std::shared_ptr<Map> meta, std::shared_ptr<Object> first, std::shared_ptr<List> rest)
   : _meta(meta), _first(first), _rest(rest) {}
 
+
+List::List(std::initializer_list<std::shared_ptr<Object> > init) 
+  : List(std::list<std::shared_ptr<Object> >(init)) {
+  // TODO: this doesn't seem like it would be very efficient
+}
+
 size_t List::count() const {
   return _count;
 }

@@ -1,6 +1,8 @@
 #ifndef _NAMESPACE_H
 #define _NAMESPACE_H
 
+#include <atomic>
+
 // namespace class
 class Namespace : public Object {
 public:
@@ -13,9 +15,13 @@ public:
   std::string toString() const override;
 
   bool instanceof(const std::type_info &info) const override;
+
+  std::shared_ptr<Object> getMapping(std::shared_ptr<Symbol> name);
 private:
-  // mappings
-  // aliases
+  // TODO: atomic (although it may be the case that shared_ptrs are already atomic?)
+  std::shared_ptr<Map> mappings;
+  std::shared_ptr<Map> aliases;
+
   std::shared_ptr<Symbol> name;
 };
 

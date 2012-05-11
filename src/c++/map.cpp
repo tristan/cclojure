@@ -108,3 +108,19 @@ Map::iterator Map::begin() const {
 Map::iterator Map::end() const {
   return Map::iterator(map.end());
 }
+
+std::pair<std::shared_ptr<Object>,std::shared_ptr<Object> > Map::entryAt(std::shared_ptr<Object> key) {
+  auto r = map.find(key);
+  if (r != map.end()) {
+    return *r;
+  }
+  return std::make_pair(nullptr, nullptr);
+}
+
+std::shared_ptr<Object> Map::valAt(std::shared_ptr<Object> key) {
+  auto r = map.find(key);
+  if (r != map.end()) {
+    return r->second;
+  }
+  return nullptr;
+}

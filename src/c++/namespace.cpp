@@ -5,7 +5,8 @@ std::map<std::shared_ptr<Symbol>,std::shared_ptr<Namespace>,compare_hashcodes> n
 // is there a case where a namespace has a namespace?
 // is this why the name is a symbol and not a string?
 
-Namespace::Namespace(const std::shared_ptr<Symbol> &name) : name(name) {
+Namespace::Namespace(const std::shared_ptr<Symbol> &name) 
+  : name(name), mappings(std::make_shared<Map>()), aliases(std::make_shared<Map>()) {
   // TODO: mappings
   // TODO: aliases
 }
@@ -36,4 +37,8 @@ bool Namespace::instanceof(const std::type_info &info) const {
   return (
           typeid(Namespace) == info
           );
+}
+
+std::shared_ptr<Object> Namespace::getMapping(std::shared_ptr<Symbol> name) {
+  return mappings->valAt(name);
 }
