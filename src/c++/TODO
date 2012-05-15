@@ -4,3 +4,5 @@
  - may be provided by util::equals
 
 # figure out if i need runtime.cpp, clojure.cpp and utils.cpp or if i can just merge them all into one
+
+# char reader and string reader read in char, make these char16_t to better support unicode

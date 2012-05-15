@@ -56,10 +56,7 @@ object read_meta(std::istream &in) { throw "TODO: meta"; };
 
 object wrap_read(std::istream &in, object sym) {
   auto o = read(in, true, NIL, true);
-  auto l = make_object(std::list<object> { o });
-  // TODO: note that we needed to cast this in the return value
-  // because cons retuns a Seq. not sure how i feel about this yet
-  return l;//std::dynamic_pointer_cast<Object>(l->cons(sym));
+  return make_object(std::list<object> { sym, o });
 }
 
 /*
