@@ -4,11 +4,11 @@
 #include <functional>
 #include <list>
 #include <regex>
+#include <map>
 #include "clojure.h"
 #include "utf8.h"
-#include "compiler.h"
-#include "runtime.h"
-#include "lispreader.h"
+
+using namespace clojure;
 
 static inline bool iswhitespace(int c) {
   return std::isspace(c) || c == ',';
@@ -26,39 +26,43 @@ static inline int hex_digit(char c)
             (c >= 'a' && c <= 'f'));
 }
 
-// a special ptr for macros that have no return value
-std::shared_ptr<Object> NOOP = std::make_shared<Symbol>("noop");
 
-// special symbols
-std::shared_ptr<Symbol> UNQUOTE = Symbol::create("clojure.core", "unquote");
-std::shared_ptr<Symbol> UNQUOTE_SPLICING = Symbol::create("clojure.core", "unquote-splicing");
+object QUOTE = make_symbol("quote");
+object THE_VAR = make_symbol("var");
+object UNQUOTE = make_symbol("clojure.core", "unquote");
+object UNQUOTE_SPLICING = make_symbol("clojure.core", "unquote-splicing");
+
+object SLASH = make_symbol("/");
+object CLOJURE_SLASH = make_symbol("clojure.core", "/");
+
+// a special ptr for macros that have no return value
+object NOOP = make_symbol("noop");
 
 // gensymbol
-std::shared_ptr<Var> GENSYM_ENV = Var::createDynamic(nullptr);
-std::shared_ptr<Var> ARG_ENV = Var::createDynamic(nullptr);
-
-std::shared_ptr<Object> read(std::istream &in, bool eof_is_error, 
-                             std::shared_ptr<Object> eof_value, bool is_recursive);
+//std::shared_ptr<Var> GENSYM_ENV = Var::createDynamic(nullptr);
+//std::shared_ptr<Var> ARG_ENV = Var::createDynamic(nullptr);
 
 // externs for macro_fn
-std::shared_ptr<Object> read_string(std::istream &in);
-std::shared_ptr<Object> read_list(std::istream &in);
-std::shared_ptr<Object> read_vector(std::istream &in);
-std::shared_ptr<Object> read_map(std::istream &in);
-std::shared_ptr<Object> read_set(std::istream &in);
-std::shared_ptr<Object> read_number(std::istream &in);
-std::shared_ptr<Object> read_comment(std::istream &in);
-std::shared_ptr<Object> read_character(std::istream &in);
-std::shared_ptr<Object> read_regex(std::istream &in);
-std::shared_ptr<Object> read_meta(std::istream &in);
+object read_string(std::istream &in);
+object read_list(std::istream &in);
+object read_vector(std::istream &in);
+object read_map(std::istream &in);
+object read_set(std::istream &in);
+object read_number(std::istream &in);
+object read_comment(std::istream &in);
+object read_character(std::istream &in);
+object read_regex(std::istream &in) { throw "TODO: regex"; };
+object read_meta(std::istream &in) { throw "TODO: meta"; };
 
-std::shared_ptr<Object> wrap_read(std::istream &in, std::shared_ptr<Symbol> sym) {
-  auto o = read(in, true, Object::nil, true);
-  auto l = std::make_shared<List>(o);
+object wrap_read(std::istream &in, object sym) {
+  auto o = read(in, true, NIL, true);
+  auto l = make_object(std::list<object> { o });
   // TODO: note that we needed to cast this in the return value
   // because cons retuns a Seq. not sure how i feel about this yet
-  return std::dynamic_pointer_cast<Object>(l->cons(sym));
+  return l;//std::dynamic_pointer_cast<Object>(l->cons(sym));
 }
+
+/*
 
 bool is_unquote(std::shared_ptr<Object> form) {
   if (form->instanceof(typeid(Seq))) {
@@ -73,9 +77,10 @@ bool is_unquote_splicing(std::shared_ptr<Object> form) {
   }
   return false;
 }
+*/
 
 // TODO: can we replace macro_fn with std::function ?
-using macro_fn = std::shared_ptr<Object>(*)(std::istream &);
+using macro_fn = object(*)(std::istream &);
 
 macro_fn getmacro(int c) {
   if (c == '"') {
@@ -87,28 +92,28 @@ macro_fn getmacro(int c) {
     // but! note that this is only ok as long as the capture list is empty
     // TODO: and i should probably make sure this doesn't incur any
     // run time overhead as apposed to using pure functions
-    return [] (std::istream &) -> std::shared_ptr<Object> {
+    return [] (std::istream &) -> object {
       throw "Unmatched delimiter: )";
     };
   } else if (c == '[') {
     return read_vector;
   } else if (c == ']') {
-    return [] (std::istream &) -> std::shared_ptr<Object> {
+    return [] (std::istream &) -> object {
       throw "Unmatched delimiter: ]";
     };
   } else if (c == '{') {
     return read_map;
   } else if (c == '}') {
-    return [] (std::istream &) -> std::shared_ptr<Object> {
+    return [] (std::istream &) -> object {
       throw "Unmatched delimiter: }";
     };
   } else if (c == '\'') {
-    return [] (std::istream &in) -> std::shared_ptr<Object> {
-      return wrap_read(in, Symbol::create("quote"));
+    return [] (std::istream &in) -> object {
+      return wrap_read(in, make_symbol("quote"));
     };
   } else if (c == '@') {
-    return [] (std::istream &in) -> std::shared_ptr<Object> {
-      return wrap_read(in, Symbol::create("clojure.core", "deref"));
+    return [] (std::istream &in) -> object {
+      return wrap_read(in, make_symbol("clojure.core", "deref"));
     };
   } else if (c == ';') {
     return read_comment;
@@ -117,12 +122,12 @@ macro_fn getmacro(int c) {
   } else if (c == '^') {
     return read_meta;
   } else if (c == '`') {
-    return [] (std::istream &in) -> std::shared_ptr<Object> {
+    return [] (std::istream &in) -> object {
       throw "TODO: implement syntax quote reader";
     };
   } else if (c == '~') {
     // unquote reader
-    return [] (std::istream &in) -> std::shared_ptr<Object> {
+    return [] (std::istream &in) -> object {
       int ch = in.get();
       if (in.eof()) {
         throw "EOF while reading character";
@@ -135,14 +140,14 @@ macro_fn getmacro(int c) {
       }
     };
   }  else if (c == '%') {
-    return [] (std::istream &in) -> std::shared_ptr<Object> {
+    return [] (std::istream &in) -> object {
       throw "TODO: implement arg reader";
     };
   } else if (c == '#') {
     // dispatch macro reader (lambda)
     // TODO: is this over-using lambdas? what is the overhead of a lambda
     // over a pure function, esp if the function is being called via a ptr
-    return [] (std::istream &in) -> std::shared_ptr<Object> {
+    return [] (std::istream &in) -> object {
       int c = in.get();
       if (in.eof()) {
         throw "EOF while reading character";
@@ -152,7 +157,7 @@ macro_fn getmacro(int c) {
       } else if (c == '^') {
         return read_meta(in);
       } else if (c == '\'') {
-        return wrap_read(in, Symbol::create("var"));
+        return wrap_read(in, THE_VAR);
       } else if (c == '"') {
         return read_regex(in);
       } else if (c == '(') {
@@ -164,13 +169,13 @@ macro_fn getmacro(int c) {
       } else if (c == '<') {
         throw "Unreadable form";
       } else if (c == '_') {
-        read(in, true, Object::nil, true);
+        read(in, true, NIL, true);
         return NOOP;
       } else {
         // try ctor reader
         // TODO: implement ctor reader
       }
-      throw "No dispatch macro for: " + std::string{ (char)c };
+      throw "No dispatch macro for: " + std::to_string((char)c);
     };
   } else {
     return 0;
@@ -195,6 +200,8 @@ long read_unicode_char(const std::string &token, int offset, int length, int bas
   }
   return uc;
 }
+
+/*
 
 std::shared_ptr<Object> syntax_quote(std::shared_ptr<Object> form) {
   std::shared_ptr<Object> ret = nullptr;
@@ -250,7 +257,9 @@ std::shared_ptr<Object> syntax_quote(std::shared_ptr<Object> form) {
   return ret;
 }
 
-std::shared_ptr<Object> read_character(std::istream &in) {
+*/
+
+object read_character(std::istream &in) {
   std::stringstream buf;
   int c = in.get();
   if (in.eof()) {
@@ -267,19 +276,19 @@ std::shared_ptr<Object> read_character(std::istream &in) {
   }
   std::string token = buf.str();
   if (token.size() == 1) {
-    return std::make_shared<Character>( token[0] );
+    return make_object( token[0] );
   } else if (token == "newline") {
-    return std::make_shared<Character>( '\n' );
+    return make_object( '\n' );
   } else if (token == "space") {
-    return std::make_shared<Character>( ' ' );
+    return make_object( ' ' );
   } else if (token == "tab") {
-    return std::make_shared<Character>( '\t' );
+    return make_object( '\t' );
   } else if (token == "backspace") {
-    return std::make_shared<Character>( '\b' );
+    return make_object( '\b' );
   } else if (token == "formfeed") {
-    return std::make_shared<Character>( '\f' );
+    return make_object( '\f' );
   } else if (token == "return") {
-    return std::make_shared<Character>( '\r' );
+    return make_object( '\r' );
   } else if (token[0] == 'u') {
     long uc = read_unicode_char(token, 1, 4, 16);
     if (c >= 0xD800 && c <= 0xDFFF) {
@@ -287,7 +296,7 @@ std::shared_ptr<Object> read_character(std::istream &in) {
       // is this any different than token?
       throw "Invalid character constant: \\" + token;
     }
-    return std::make_shared<Character>( uc );
+    return make_object( uc );
   } else if (token[0] == 'o') {
     int len = token.size() - 1;
     if (len > 3) {
@@ -297,12 +306,12 @@ std::shared_ptr<Object> read_character(std::istream &in) {
     if (uc > 0377) {
       throw "Octal escape sequence mst be in range [0, 377].";
     }
-    return std::make_shared<Character>( uc );
+    return make_object( uc );
   }
   throw "Unsupported character: \\" + token;
 }
 
-std::shared_ptr<Object> read_string(std::istream &in) {
+object read_string(std::istream &in) {
   std::stringstream buf;
   // lambda to get the next char, or throw EOF exception
   std::function<int ()> getc = [&in] () -> int { 
@@ -315,7 +324,7 @@ std::shared_ptr<Object> read_string(std::istream &in) {
   while (1) {
     int c = getc();
     if (c == '"') {
-      return std::make_shared<String>(buf.str());
+      return make_object(buf.str());
     }
     if (c == '\\') {
       c = getc();
@@ -377,12 +386,10 @@ std::shared_ptr<Object> read_string(std::istream &in) {
       buf.put(c);
     }
   }
-  return Object::nil;
+  return NIL;
 }
 
-std::list<std::shared_ptr<Object>> read_delimited_list(int delim, std::istream &in) {
-  std::list<std::shared_ptr<Object> > list;
-
+void read_delimited_list(int delim, std::istream &in, std::function<void(object)> putfn) {
   for (; ;) {
     int c;
     while (iswhitespace(c = in.get())) {}
@@ -399,50 +406,80 @@ std::list<std::shared_ptr<Object>> read_delimited_list(int delim, std::istream &
     if (fn != 0) {
       auto m = fn(in);
       if (m != NOOP) {
-        list.push_back(m);
+        putfn(m);
       }
     } else {
       in.unget();
-      auto o = read(in, true, Object::nil, true);
+      auto o = read(in, true, NIL, true);
       if (o != NOOP) {
-        list.push_back(o);
+        putfn(o);
       }
     }
   }
-
-  return list;
 }
 
-std::shared_ptr<Object> read_list(std::istream &in) {
-  std::list<std::shared_ptr<Object> > list = read_delimited_list(')', in);
-  return std::make_shared<List>( list );
+object read_list(std::istream &in) {
+  std::list<object> list;
+  read_delimited_list(')', in,
+                      [&list] (object o) -> void {
+                        list.push_back(o);
+                      });
+  return make_object(list);
 }
 
-std::shared_ptr<Object> read_vector(std::istream &in) {
-  std::list<std::shared_ptr<Object> > list = read_delimited_list(']', in);
-  return std::make_shared<Vector>( list );
+object read_vector(std::istream &in) {
+  std::vector<object> vec;
+  read_delimited_list(']', in,
+                      [&vec] (object o) -> void {
+                        vec.push_back(o);
+                      });
+  return make_object(vec);
 }
 
-std::shared_ptr<Object> read_map(std::istream &in) {
-  std::list<std::shared_ptr<Object> > list = read_delimited_list('}', in);
-  if ((list.size() & 1) == 1) {
+object read_set(std::istream &in) {
+  std::set<object> set;
+  read_delimited_list('}', in,
+                      [&set] (object o) -> void {
+                        auto r = set.insert(o);
+                            if (r.second == false) {
+                              throw "Duplicate key: " + to_string(o);
+                            }
+                      });
+  return make_object(set);
+}
+
+
+object read_map(std::istream &in) {
+  std::map<object,object> map;
+  object key = nullptr;
+  read_delimited_list('}', in,
+                      [&map, &key] (object o) -> void {
+                        if (key == nullptr) {
+                          key = o;
+                        } else {
+                          auto r = map.insert(std::make_pair(key,o));
+                          if (r.second == false) {
+                            throw "Duplicate key: " + to_string(o);
+                          }
+                          key = nullptr;
+                        }
+                      });
+
+  if (key != nullptr) {
     throw "Map literal must contain an even number of forms";
   }
-  return std::make_shared<Map>( list );
+  return make_object( map );
 }
 
-std::shared_ptr<Object> read_set(std::istream &in) {
-  std::list<std::shared_ptr<Object> > list = read_delimited_list('}', in);
-  return std::make_shared<Set>( list );
-}
-
-std::shared_ptr<Object> read_comment(std::istream &in) {
+object read_comment(std::istream &in) {
   int c;
   do {
     c = in.get();
   } while (!in.eof() && c != '\n' && c != '\r');
   return NOOP;
 }
+
+/*
 
 std::shared_ptr<Object> read_regex(std::istream &in) {
   std::stringstream buf;
@@ -497,6 +534,8 @@ std::shared_ptr<Object> read_meta(std::istream &in) {
   throw "Metadata can only be applied to IMetas";
 }
 
+*/
+
 enum class number_type : int {
   none,
   integer,
@@ -505,7 +544,7 @@ enum class number_type : int {
   ratio
 };
 
-std::shared_ptr<Object> read_number(std::istream &in) {
+object read_number(std::istream &in) {
   std::stringstream buf;
   std::string start = "";
   bool error = false;
@@ -567,16 +606,17 @@ std::shared_ptr<Object> read_number(std::istream &in) {
         throw buf.str();
       } else {
         if (type == number_type::integer || type == number_type::none) {
-          return std::make_shared<Integer>(buf.str(), base);
+          return make_object(std::stoi(buf.str(), 0, base));
         } else if (type == number_type::irrational || type == number_type::scientific) {
-          return std::make_shared<Irrational>(buf.str());
+          return make_object(std::stod(buf.str(), 0));
         } else if (type == number_type::ratio) {
           std::string r = buf.str();
           size_t s = r.find('/');
-          return std::make_shared<Ratio>(r.substr(0, s), r.substr(s+1));
+          return make_object(std::make_pair(std::stoi(r.substr(0, s), 0, 10),
+                                            std::stoi(r.substr(s+1), 0, 10)));
         }
       }
-      return Object::nil; // should never get here
+      return NIL; // should never get here
     }
     if (error) {
       buf.put(c);
@@ -591,7 +631,7 @@ std::shared_ptr<Object> read_number(std::istream &in) {
           error = true;
           buf.put(c);
         } else {
-          base = stoi(radix);
+          base = std::stoi(radix, 0, 10);
           if (base > 36) {
             // TODO: NumberFormatException
             throw "Radix out of range";
@@ -648,10 +688,10 @@ std::shared_ptr<Object> read_number(std::istream &in) {
       error = true;
     }
   }
-  return Object::nil;
+  return NIL;
 }
 
-std::shared_ptr<Object> read_token(std::istream &in) {
+object read_token(std::istream &in) {
   std::stringstream buf;
   std::string ns = "";
   for (; ;) {
@@ -671,42 +711,39 @@ std::shared_ptr<Object> read_token(std::istream &in) {
     throw "Invalid token: " + s;
   }
   if (s == "nil") {
-    return Object::nil;
+    return NIL;
   }
   if (s == "true") {
-    return Object::T;
+    return TRUE;
   }
   if (s == "false") {
-    return Object::F;
+    return FALSE;
   }
-  // TODO: / = slash, clojure.core// = slash
+  if (s == "/") {
+    return SLASH;
+  }
+  if (s == "clojure.core//") {
+    return CLOJURE_SLASH;
+  }
   if ((ns != "" && ns.substr(ns.size()-3) == ":/")
       || s.back() == ':'
       || s.find("::", 1) != std::string::npos) {
-    return nullptr;
+    return NIL;
   }
   if (s[0] == ':' && s[1] == ':') {
-    auto ks = Symbol::create(s.substr(2));
+    auto ks = make_symbol(s.substr(2));
     // TODO: handle namespace qualified Keywords
-    return nullptr;
+    return NIL;
   }
   bool iskey = s[0] == ':';
   if (iskey) {
-    return Keyword::create(s.substr(1));
+    return make_keyword(s.substr(1));
   }
-  return std::make_shared<Symbol>(s);
+  return make_symbol(s);
 }
 
-
-std::shared_ptr<Object> read(std::istream &in, bool eof_is_error, 
-                             std::shared_ptr<Object> eof_value, bool is_recursive) {
-  return LispReader::read(in, eof_is_error, eof_value, is_recursive);
-}
-
-std::shared_ptr<Object> LispReader::read(std::istream &in, bool eof_is_error, 
-                                         std::shared_ptr<Object> eof_value, 
-                                         bool is_recursive) {
-  //return read(in, eof_is_error, eof_value, is_recursive);
+object clojure::read(std::istream &in, bool eof_is_error, 
+                     object eof_value, bool is_recursive) {
   for (; ;) {
     int c;
     while (iswhitespace(c = in.get())) {}

@@ -1,58 +1,84 @@
 #include "clojure.h"
 #include "runtime.h"
+#include <list>
+#include <vector>
+#include <map>
+#include <set>
+#include <string>
 
-namespace runtime {
-  std::shared_ptr<Namespace> CLOJURE_NS = Namespace::findOrCreate("clojure.core");
-  std::shared_ptr<Var> CURRENT_NS = std::make_shared<Var>(CLOJURE_NS,
-                                                          Symbol::create("*ns*"),
-                                                          true);
-}
+using namespace clojure;
 
-std::atomic_uint __id( 1 );
-
-int runtime::nextId() {
-  return __id++;
-}
-
-std::shared_ptr<Seq> seqFrom(std::shared_ptr<Object> coll) {
-  if (coll == nullptr) {
-    return nullptr;
-  } else if (coll->instanceof(typeid(Seqable))) {
-    return std::dynamic_pointer_cast<Seqable>(coll)->seq();
+void runtime::print(object x, std::ostream &out) {
+  //out << "[[" << x->type().name() << "]] ";
+  if (x->type() == typeid(std::nullptr_t)) {
+    out << "nil";
   }
-  throw std::string{"Don't know how to create seq from "} + typeid(coll.get()).name();
-}
-
-std::shared_ptr<Seq> runtime::seq(std::shared_ptr<Object> coll) {
-  return seqFrom(coll);
-}
-
-std::shared_ptr<Object> runtime::first(std::shared_ptr<Object> x) {
-  if (x->instanceof(typeid(Seq))) {
-    return std::dynamic_pointer_cast<Seq>(x)->first();
+  else if (x->type() == typeid(bool)) {
+    out << (boost::any_cast<bool>(*x) ? "true" : "false");
   }
-  return nullptr;
-  // TODO: real seq impl
-}
-
-std::shared_ptr<Object> runtime::second(std::shared_ptr<Object> x) {
-  return first(std::dynamic_pointer_cast<Object>(next(x)));
-}
-
-std::shared_ptr<Seq> runtime::next(std::shared_ptr<Object> x) {
-  if (x->instanceof(typeid(Seq))) {
-    return std::dynamic_pointer_cast<Seq>(x)->rest();
+  else if (x->type() == typeid(int)) {
+    out << boost::any_cast<int>(*x);
   }
-  return nullptr;
-  // TODO: real seq impl
-}
-
-
-
-/** list support **/
-
-std::shared_ptr<Seq> runtime::list(std::shared_ptr<Object> arg1, std::shared_ptr<Object> arg2) {
-  // TODO: figure out if we need to follow the was java clojure does this
-  auto l = std::make_shared<List>(arg2);
-  return l->cons(arg1);
+  else if (x->type() == typeid(std::string)) {
+    out << '"' << boost::any_cast<std::string>(*x) << '"';
+  }
+  else if (x->type() == typeid(symbol)) {
+    symbol sym = boost::any_cast<symbol>(*x);
+    if (sym.first != "") {
+      out << sym.first << "/";
+    }
+    out << sym.second;
+  } else if (x->type() == typeid(keyword)) {
+    keyword kwd = boost::any_cast<keyword>(*x);
+    out << ":";
+    if (kwd.sym.first != "") {
+      out << kwd.sym.first << "/";
+    }
+    out << kwd.sym.second;
+  } else if (x->type() == typeid(std::list<object>)) {
+    out << "(";
+    std::list<object> l = boost::any_cast<std::list<object>>(*x);
+    for (auto it = l.begin(); it != l.end(); ) {
+      print(*it++, out);
+      if (it != l.end()) {
+        out << " ";
+      }
+    }
+    out << ")";
+  } else if (x->type() == typeid(std::vector<object>)) {
+    out << "[";
+    std::vector<object> l = boost::any_cast<std::vector<object>>(*x);
+    for (auto it = l.begin(); it != l.end(); ) {
+      print(*it++, out);
+      if (it != l.end()) {
+        out << " ";
+      }
+    }
+    out << "]";  
+  } else if (x->type() == typeid(std::set<object>)) {
+    out << "#{(";
+    std::set<object> l = boost::any_cast<std::set<object>>(*x);
+    for (auto it = l.begin(); it != l.end(); ) {
+      print(*it++, out);
+      if (it != l.end()) {
+        out << " ";
+      }
+    }
+    out << "}";
+  } else if (x->type() == typeid(std::map<object,object>)) {
+    out << "{";
+    std::map<object,object> l = boost::any_cast<std::map<object,object>>(*x);
+    for (auto it = l.begin(); it != l.end(); ) {
+      auto val = *it++;
+      print(val.first, out);
+      out << " ";
+      print(val.second, out);
+      if (it != l.end()) {
+        out << ", ";
+      }
+    }
+    out << "}";
+  } else {
+    out << "#<" << x->type().name() << " >";
+  }
 }

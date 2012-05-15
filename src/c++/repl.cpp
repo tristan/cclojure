@@ -4,17 +4,17 @@
 #include "clojure.h"
 #include "repl.h"
 #include "lispreader.h"
-
+#include "runtime.h"
 
 int cpp_repl(std::istream &in) {
-  auto ns = Namespace::findOrCreate("user");
-  std::shared_ptr<Object> eof_value = std::make_shared<Integer>(-1L);
+  auto ns = "user"; //Namespace::findOrCreate("user");
+  auto eof_value = clojure::make_object(nullptr);
   std::cout << "Clojure c++ 1.0a" << std::endl;
   while (1) {
-    std::cout << ns->toString() << "=> ";
+    std::cout << ns << "=> ";
     try {
       // read
-      auto o = LispReader::read(in, false, eof_value, false);
+      auto o = clojure::read(in, false, eof_value, false);
       // eval
       if (o == eof_value) {
         std::cout << std::endl;
@@ -22,7 +22,7 @@ int cpp_repl(std::istream &in) {
       }
       // TODO: eval before print (Compiler.java:5389)
       // print
-      utils::print(o, std::cout);
+      runtime::print(o, std::cout);
       std::cout << std::endl;
     } catch (std::string s) {
       std::cout << s << std::endl;

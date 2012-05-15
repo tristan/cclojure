@@ -6,11 +6,12 @@ CC=$(CXX)
 CFLAGS=$(CXXFLAGS)
 
 EXENAME=cclj
-SRCS = object string boolean character symbol keyword namespace var
-SRCS += pattern
-SRCS += numbers
-SRCS += list vector map set
-SRCS += utf8 utils runtime compiler lispreader repl cclj
+SRCS = clojure
+#SRCS = object string boolean character symbol keyword namespace var
+#SRCS += pattern
+#SRCS += numbers
+#SRCS += list vector map set
+SRCS += utf8 runtime lispreader repl cclj
 LIBS = $(SRCS:%=%.o)
 
 default: $(EXENAME)
