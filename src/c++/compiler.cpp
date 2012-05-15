@@ -1,6 +1,7 @@
 #include <functional>
 #include <memory>
 #include "clojure.h"
+#include "runtime.h"
 #include "compiler.h"
 
 std::shared_ptr<Var> LOADER = Var::createDynamic();
@@ -146,5 +147,5 @@ std::shared_ptr<Symbol> Compiler::resolveSymbol(std::shared_ptr<Symbol> sym) {
 }
 
 std::shared_ptr<Namespace> Compiler::currentNS() {
-  return std::dynamic_pointer_cast<Namespace>(utils::CURRENT_NS->deref());
+  return std::dynamic_pointer_cast<Namespace>(runtime::CURRENT_NS->deref());
 }

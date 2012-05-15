@@ -7,6 +7,7 @@
 #include "clojure.h"
 #include "utf8.h"
 #include "compiler.h"
+#include "runtime.h"
 #include "lispreader.h"
 
 static inline bool iswhitespace(int c) {
@@ -28,6 +29,11 @@ static inline int hex_digit(char c)
 // a special ptr for macros that have no return value
 std::shared_ptr<Object> NOOP = std::make_shared<Symbol>("noop");
 
+// special symbols
+std::shared_ptr<Symbol> UNQUOTE = Symbol::create("clojure.core", "unquote");
+std::shared_ptr<Symbol> UNQUOTE_SPLICING = Symbol::create("clojure.core", "unquote-splicing");
+
+// gensymbol
 std::shared_ptr<Var> GENSYM_ENV = Var::createDynamic(nullptr);
 std::shared_ptr<Var> ARG_ENV = Var::createDynamic(nullptr);
 
@@ -52,6 +58,20 @@ std::shared_ptr<Object> wrap_read(std::istream &in, std::shared_ptr<Symbol> sym)
   // TODO: note that we needed to cast this in the return value
   // because cons retuns a Seq. not sure how i feel about this yet
   return std::dynamic_pointer_cast<Object>(l->cons(sym));
+}
+
+bool is_unquote(std::shared_ptr<Object> form) {
+  if (form->instanceof(typeid(Seq))) {
+    return utils::equals(runtime::first(form), UNQUOTE);
+  }
+  return false;
+}
+
+bool is_unquote_splicing(std::shared_ptr<Object> form) {
+  if (form->instanceof(typeid(Seq))) {
+    return utils::equals(runtime::first(form), UNQUOTE_SPLICING);
+  }
+  return false;
 }
 
 // TODO: can we replace macro_fn with std::function ?
@@ -108,10 +128,10 @@ macro_fn getmacro(int c) {
         throw "EOF while reading character";
       }
       if (ch == '@') {
-        return wrap_read(in, Symbol::create("clojure.core", "unquote-splicing"));
+        return wrap_read(in, UNQUOTE_SPLICING);
       } else {
         in.unget();
-        return wrap_read(in, Symbol::create("clojure.core", "unquote"));
+        return wrap_read(in, UNQUOTE);
       }
     };
   }  else if (c == '%') {
@@ -190,7 +210,7 @@ std::shared_ptr<Object> syntax_quote(std::shared_ptr<Object> form) {
       auto gs = std::dynamic_pointer_cast<Symbol>(gmap->valAt(sym));
       if (gs == nullptr) {
         gs = Symbol::create("", sym->name.substr(0, sym->name.size() - 1) +
-                            "__" + std::to_string(utils::nextId()) + "__auto__");
+                            "__" + std::to_string(runtime::nextId()) + "__auto__");
         GENSYM_ENV->set(gmap->assoc(sym, gs));
       }
       sym = gs;
@@ -214,6 +234,18 @@ std::shared_ptr<Object> syntax_quote(std::shared_ptr<Object> form) {
       }
     }
     ret = std::shared_ptr<List>( new List { Compiler::QUOTE, sym } );
+  } else if (is_unquote(form)) {
+    return runtime::second(form);
+  } else if (is_unquote_splicing(form)) {
+    throw "splice not in list";
+  } else if (false) { // TODO: instanceof IPersistentCollection
+  } else if (form->instanceof(typeid(Keyword)) ||
+             form->instanceof(typeid(Number)) ||
+             form->instanceof(typeid(Character)) ||
+             form->instanceof(typeid(String))) {
+    ret = form;
+  } else {
+    ret = std::dynamic_pointer_cast<Object>(runtime::list(Compiler::QUOTE, form));
   }
   return ret;
 }

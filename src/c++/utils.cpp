@@ -4,13 +4,6 @@
 #include "clojure.h"
 
 
-namespace utils {
-  std::shared_ptr<Namespace> CLOJURE_NS = Namespace::findOrCreate("clojure.core");
-  std::shared_ptr<Var> CURRENT_NS = std::make_shared<Var>(CLOJURE_NS,
-                                                          Symbol::create("*ns*"),
-                                                          true);
-}                                           
-
 // TODO: learn more about the typeid function
 // and type_info stuff, because it seems (at
 // least pre-c++11) that this is a bad way
@@ -114,8 +107,12 @@ std::string utils::print_string(const std::shared_ptr<const Object> &o) {
   return nullptr;
   }*/
 
-std::atomic_uint id( 1 );
-
-int utils::nextId() {
-  return id++;
+bool utils::equals(std::shared_ptr<Object> k1, std::shared_ptr<Object> k2) {
+  if (k1 == k2) {
+    return true;
+  }
+  if (k1 != nullptr && k2 != nullptr) {
+    return *k1 == *k2;
+  }
+  return false;
 }
