@@ -416,7 +416,7 @@ void read_delimited_list(int delim, std::istream &in, std::function<void(object)
 }
 
 object read_list(std::istream &in) {
-  std::list<object> list;
+  list list;
   read_delimited_list(')', in,
                       [&list] (object o) -> void {
                         list.push_back(o);
@@ -425,7 +425,7 @@ object read_list(std::istream &in) {
 }
 
 object read_vector(std::istream &in) {
-  std::vector<object> vec;
+  vector vec;
   read_delimited_list(']', in,
                       [&vec] (object o) -> void {
                         vec.push_back(o);
@@ -434,7 +434,7 @@ object read_vector(std::istream &in) {
 }
 
 object read_set(std::istream &in) {
-  std::set<object> set;
+  set set;
   read_delimited_list('}', in,
                       [&set] (object o) -> void {
                         auto r = set.insert(o);
@@ -447,7 +447,7 @@ object read_set(std::istream &in) {
 
 
 object read_map(std::istream &in) {
-  std::map<object,object> map;
+  map map;
   object key = nullptr;
   read_delimited_list('}', in,
                       [&map, &key] (object o) -> void {
@@ -609,8 +609,8 @@ object read_number(std::istream &in) {
         } else if (type == number_type::ratio) {
           std::string r = buf.str();
           size_t s = r.find('/');
-          return make_object(std::make_pair(std::stoi(r.substr(0, s), 0, 10),
-                                            std::stoi(r.substr(s+1), 0, 10)));
+          return make_object(ratio(std::stoi(r.substr(0, s), 0, 10),
+                                   std::stoi(r.substr(s+1), 0, 10)));
         }
       }
       return NIL; // should never get here

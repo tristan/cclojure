@@ -1,6 +1,7 @@
 #ifndef _CLJ_COMPILER_H
 #define _CLJ_COMPILER_H
 
+/*
 class Compiler {
 public:
   static std::shared_ptr<Object> eval(std::shared_ptr<Object> form);
@@ -43,5 +44,12 @@ public: // symbols
   static std::shared_ptr<Symbol> _AMP_;
   static std::shared_ptr<Symbol> ISEQ;
 };
+*/
+
+namespace compiler {
+  clojure::object macroexpand1(clojure::object const &x);
+  clojure::object macroexpand(clojure::object const &form);
+  clojure::object eval(clojure::object const &form);
+}
 
 #endif 

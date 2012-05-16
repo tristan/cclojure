@@ -11,7 +11,7 @@ SRCS = clojure
 #SRCS += pattern
 #SRCS += numbers
 #SRCS += list vector map set
-SRCS += utf8 runtime lispreader repl cclj
+SRCS += utf8 runtime util compiler lispreader repl cclj
 LIBS = $(SRCS:%=%.o)
 
 default: $(EXENAME)

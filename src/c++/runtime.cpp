@@ -3,10 +3,16 @@
 #include <list>
 #include <vector>
 #include <map>
+#include <atomic>
 #include <set>
 #include <string>
 
 using namespace clojure;
+
+namespace runtime {
+  object CLOJURE_NS = make_namespace(make_symbol("clojure.core"));
+  object CURRENT_NS = make_var(CLOJURE_NS, make_symbol("*ns*"), CLOJURE_NS);
+}
 
 void runtime::print(object x, std::ostream &out) {
   //out << "[[" << x->type().name() << "]] ";
@@ -19,25 +25,32 @@ void runtime::print(object x, std::ostream &out) {
   else if (x->type() == typeid(int)) {
     out << boost::any_cast<int>(*x);
   }
-  else if (x->type() == typeid(std::string)) {
-    out << '"' << boost::any_cast<std::string>(*x) << '"';
+  else if (x->type() == typeid(double)) {
+    out << boost::any_cast<double>(*x);
+  }
+  else if (x->type() == typeid(ratio)) {
+    ratio r = boost::any_cast<ratio>(*x);
+    out << r.num << "/" << r.den;
+  }
+  else if (x->type() == typeid(string)) {
+    out << '"' << boost::any_cast<string>(*x) << '"';
   }
   else if (x->type() == typeid(symbol)) {
     symbol sym = boost::any_cast<symbol>(*x);
-    if (sym.first != "") {
-      out << sym.first << "/";
+    if (sym.ns != "") {
+      out << sym.ns << "/";
     }
-    out << sym.second;
+    out << sym.name;
   } else if (x->type() == typeid(keyword)) {
     keyword kwd = boost::any_cast<keyword>(*x);
     out << ":";
-    if (kwd.sym.first != "") {
-      out << kwd.sym.first << "/";
+    if (kwd.sym.ns != "") {
+      out << kwd.sym.ns << "/";
     }
-    out << kwd.sym.second;
-  } else if (x->type() == typeid(std::list<object>)) {
+    out << kwd.sym.name;
+  } else if (x->type() == typeid(list)) {
     out << "(";
-    std::list<object> l = boost::any_cast<std::list<object>>(*x);
+    list l = boost::any_cast<list>(*x);
     for (auto it = l.begin(); it != l.end(); ) {
       print(*it++, out);
       if (it != l.end()) {
@@ -45,9 +58,9 @@ void runtime::print(object x, std::ostream &out) {
       }
     }
     out << ")";
-  } else if (x->type() == typeid(std::vector<object>)) {
+  } else if (x->type() == typeid(vector)) {
     out << "[";
-    std::vector<object> l = boost::any_cast<std::vector<object>>(*x);
+    vector l = boost::any_cast<vector>(*x);
     for (auto it = l.begin(); it != l.end(); ) {
       print(*it++, out);
       if (it != l.end()) {
@@ -55,9 +68,9 @@ void runtime::print(object x, std::ostream &out) {
       }
     }
     out << "]";  
-  } else if (x->type() == typeid(std::set<object>)) {
+  } else if (x->type() == typeid(set)) {
     out << "#{(";
-    std::set<object> l = boost::any_cast<std::set<object>>(*x);
+    set l = boost::any_cast<set>(*x);
     for (auto it = l.begin(); it != l.end(); ) {
       print(*it++, out);
       if (it != l.end()) {
@@ -65,9 +78,9 @@ void runtime::print(object x, std::ostream &out) {
       }
     }
     out << "}";
-  } else if (x->type() == typeid(std::map<object,object>)) {
+  } else if (x->type() == typeid(map)) {
     out << "{";
-    std::map<object,object> l = boost::any_cast<std::map<object,object>>(*x);
+    map l = boost::any_cast<map>(*x);
     for (auto it = l.begin(); it != l.end(); ) {
       auto val = *it++;
       print(val.first, out);
@@ -81,4 +94,10 @@ void runtime::print(object x, std::ostream &out) {
   } else {
     out << "#<" << x->type().name() << " >";
   }
+}
+
+std::atomic_int __id ( 1 );
+
+int runtime::next_id() {
+  return __id++;
 }

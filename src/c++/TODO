@@ -6,3 +6,8 @@
 # figure out if i need runtime.cpp, clojure.cpp and utils.cpp or if i can just merge them all into one
 
 # char reader and string reader read in char, make these char16_t to better support unicode
+
+# flush input buffer after an error (so the lispreader doesn't get called again with the rest of the input)
+ - however, clojure doesn't seem to do this either, so maybe it's not so bad to leave it?
+
+# namespaces && vars

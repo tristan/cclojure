@@ -4,6 +4,7 @@
 #include "clojure.h"
 #include "repl.h"
 #include "lispreader.h"
+#include "compiler.h"
 #include "runtime.h"
 
 int cpp_repl(std::istream &in) {
@@ -21,6 +22,7 @@ int cpp_repl(std::istream &in) {
         return 0;
       }
       // TODO: eval before print (Compiler.java:5389)
+      o = compiler::eval(o);
       // print
       runtime::print(o, std::cout);
       std::cout << std::endl;

@@ -1,9 +1,21 @@
 #include <functional>
 #include <memory>
+#include <list>
+#include <map>
+#include <string>
+#include <set>
+#include <vector>
+#include <iostream>
 #include "clojure.h"
 #include "runtime.h"
+#include "util.h"
 #include "compiler.h"
 
+namespace compiler {
+  clojure::object DO = clojure::make_symbol("do");
+}
+
+/*
 std::shared_ptr<Var> LOADER = Var::createDynamic();
 std::shared_ptr<Var> KEYWORDS = Var::createDynamic();
 
@@ -39,113 +51,90 @@ std::shared_ptr<Symbol> Compiler::IDENTIRY = Symbol::create("clojure.core", "ide
 std::shared_ptr<Symbol> Compiler::_AMP_ = Symbol::create("&");
 std::shared_ptr<Symbol> Compiler::ISEQ = Symbol::create("clojure.lang.ISeq");
 
-std::map<std::shared_ptr<Symbol>, std::shared_ptr<Object> > specials {
-  std::make_pair(Compiler::DEF, nullptr),
-    std::make_pair(Compiler::LOOP, nullptr),
-    std::make_pair(Compiler::RECUR, nullptr)
-    };
-
-enum class C {
-  STATEMENT,
-    EXPRESSION,
-    RETURN,
-    EVAL
-    };
-
-/*
-class Expr {
-  std::shared_ptr<Object> eval() = 0;
-};
 */
 
-using Expr = std::function<std::shared_ptr<Object>()>;
+using namespace clojure;
 
-Expr analyzeSymbol(std::shared_ptr<Symbol> sym) {
-  // TODO: implement
-  return [] () -> std::shared_ptr<Object> {
-    return nullptr;
+using expr = std::function<object()>;
+expr analyze(object const &form, std::string name);
+
+expr analyze_symbol(object const &sym) {
+  // TODO: impl
+  return [sym] () -> object { return sym; };
+}
+
+expr register_keyword(object const &kwd) {
+  // TODO: impl thread binding stuff
+  return [kwd] () -> object { return kwd; };
+}
+
+expr analyze_seq(object const &form, std::string name) {
+  // TODO: impl thread binding stuff
+  object me = compiler::macroexpand1(form);
+  if (me != form) {
+    return analyze(me, name);
+  }
+  list fl = boost::any_cast<list>(*form);
+  object op = fl.front();
+  if (op == clojure::NIL) {
+    throw "Can't call nil";
+  }
+
+  return [] () -> object { return clojure::NIL; };
+}
+
+expr analyze(object const &form, std::string name) {
+  if (form->type() == typeid(symbol)) {
+    return analyze_symbol(form);
+  }
+  if (form->type() == typeid(keyword)) {
+    return register_keyword(form);
+  }
+  if (form->type() == typeid(list)) {
+    return analyze_seq(form, name);
+  }
+  return [form] () -> object { // Constant/Literal Expr
+    return form;
   };
 }
 
-Expr registerKeyword(std::shared_ptr<Keyword> keyword) {
-  // TODO: implement
-  return [] () -> std::shared_ptr<Object> {
-    return nullptr;
-  };
+object compiler::macroexpand1(object const &x) {
+  // TODO: impl
+  return x;
 }
 
-Expr analyze(C context, std::shared_ptr<Object> form, const std::string &name) {
-  // TODO: implemnt all cases
-  if (form == nullptr) {
-    return [] () -> std::shared_ptr<Object> {
-      return nullptr;
-    };
-  } else if (form == Object::T) {
-    return [] () -> std::shared_ptr<Object> {
-      return Object::T;
-    };
-  } else if (form == Object::F) {
-    return [] () -> std::shared_ptr<Object> {
-      return Object::F;
-    };
+object compiler::macroexpand(object const &form) {
+  object exf = compiler::macroexpand1(form);
+  if (exf != form) {
+    return compiler::macroexpand(exf);
   }
+  return form;
+}
 
-  if (form->instanceof(typeid(Symbol))) {
-    return analyzeSymbol(std::dynamic_pointer_cast<Symbol>(form));
-  } else if (form->instanceof(typeid(Keyword))) {
-    return registerKeyword(std::dynamic_pointer_cast<Keyword>(form));
+object compiler::eval(object const &x) {
+  object form = macroexpand(x);
+  if (form->type() == typeid(list)) { // NOTE: ISeq = list
+    list l = boost::any_cast<list>(*form);
+    if (util::equals(l.front(), compiler::DO)) {
+      auto it = l.begin();
+      it++;
+      for (; it != l.end(); it++) {
+        eval(*it);
+      }
+      --it;
+      return eval(*it);
+    }
+    if (!(l.front()->type() == typeid(symbol) &&
+          [] (symbol &&sym) -> bool { // .startsWith("def")
+            return (sym.name.size() >= 3 && sym.name.substr(0, 3) == "def");
+          }(boost::any_cast<symbol>(*l.front())))) {
+      // analyze the list to generate an expression
+      expr ex = analyze(form, "eval" + std::to_string(runtime::next_id()));
+      // eval the expression to generate a function
+      // invoke the function and return the result
+    }    
   }
-
-  // TODO: implemnt real default
-  return [] () -> std::shared_ptr<Object> {
-    return nullptr;
-  };
-}
-
-Expr analyze(C context, std::shared_ptr<Object> form) {
-  return analyze(context, form, "");
-}
-
-bool Compiler::isSpecial(std::shared_ptr<Object> sym) {
-  if (!sym->instanceof(typeid(Symbol))) {
-    return false;
-  }
-  auto it = specials.find(std::dynamic_pointer_cast<Symbol>(sym));
-  return (it != specials.end());
-}
-
-std::shared_ptr<Object> Compiler::eval(std::shared_ptr<Object> form) {
-  Var::pushThreadBindings(std::make_shared<Map>(std::list<std::shared_ptr<Object> >{LOADER, nullptr}));
-  return nullptr;
-
-  // push new class loader onto thread stack
-
-  // get line number for "form" if one exists
-  // and push it onto the thread stack
-
-  // do macro expansion of "form"
-
-  // if "form" is a collection, and starts with "do"
-  //   iterate over the collection and eval all the
-  //   items in the collection, only returning the
-  //   results of the final evaluation
-
-  // if "form" is a collection and the first item is
-  // a symbol which starts with "def"
-  //   build an object expression
-  //   eval that expression
-
-  // else ...
-  //   build an expression from "form"
-  //   eval the expression
-  
-}
-
-std::shared_ptr<Symbol> Compiler::resolveSymbol(std::shared_ptr<Symbol> sym) {
-  // TODO: implement
-  return sym;
-}
-
-std::shared_ptr<Namespace> Compiler::currentNS() {
-  return std::dynamic_pointer_cast<Namespace>(runtime::CURRENT_NS->deref());
+  // anazlyse the object to generate an expression
+  // return the evaluation of the expression
+  return form;
 }
